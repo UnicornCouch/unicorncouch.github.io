@@ -31,11 +31,14 @@
     user-select:none;
     -webkit-user-select:none;
   }
-  .clouds { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .clouds { position:fixed; inset:0; pointer-events:none; z-index:2; overflow:hidden; }
   .clouds span {
     position:absolute; opacity:.7;
+    pointer-events:auto; cursor:pointer;
     animation: drift linear infinite;
   }
+  .clouds span.gulp { animation: gulp .5s ease; }
+  @keyframes gulp { 40% { transform:scale(1.6); opacity:1; } 100% { transform:scale(1); } }
   @keyframes drift {
     from { transform: translateX(-15vw); }
     to   { transform: translateX(115vw); }
@@ -87,6 +90,34 @@
   .stage-label {
     font-family:'Fredoka',sans-serif; font-weight:600; font-size:.9rem;
     color:var(--lav); margin-top:2px;
+  }
+
+  .meter-wrap { margin:10px 0 14px; }
+  .meter-label { display:flex; justify-content:space-between; font-size:.78rem; font-weight:800; color:var(--lav); margin-bottom:4px; letter-spacing:.04em; }
+  .meter {
+    height:16px; border-radius:99px; background:#ffffff;
+    border:2px solid #d8c9f0; overflow:hidden;
+    box-shadow: inset 0 1px 3px rgba(74,53,96,.12);
+  }
+  .meter-fill {
+    height:100%; width:0%;
+    background: linear-gradient(90deg, var(--pink), var(--sun-bright), var(--aqua));
+    border-radius:99px;
+    transition: width .15s ease;
+  }
+  .chill-banner {
+    display:none; text-align:center; font-family:'Fredoka',sans-serif; font-weight:700;
+    color:var(--sun); font-size:1.05rem; margin-top:6px;
+    animation: bounceIn .4s ease;
+  }
+  body.chill-mode .chill-banner { display:block; }
+  @keyframes bounceIn { 0%{transform:scale(.5)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  body.chill-mode { animation: chillSky 3s linear infinite; }
+  @keyframes chillSky {
+    0%   { background-color:#ffe3f1; background-image: linear-gradient(180deg, #ffe3f1 0%, #d9e9ff 100%); }
+    33%  { background-color:#e3fff0; background-image: linear-gradient(180deg, #e3fff0 0%, #fff3d9 100%); }
+    66%  { background-color:#e3ecff; background-image: linear-gradient(180deg, #e3ecff 0%, #ffe9f5 100%); }
+    100% { background-color:#ffe3f1; background-image: linear-gradient(180deg, #ffe3f1 0%, #d9e9ff 100%); }
   }
   .decor-shelf {
     display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
@@ -152,6 +183,36 @@
   .menu-fab:focus-visible { outline:3px dashed var(--aqua); outline-offset:2px; }
   .menu-modal { max-width:300px; }
   .menu-list { display:flex; flex-direction:column; gap:8px; }
+  .dev-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .dev-field label {
+    display:block; font-weight:800; font-size:.68rem; color:var(--lav);
+    letter-spacing:.04em; margin-bottom:2px;
+  }
+  .dev-field input {
+    width:100%; font-family:'Fredoka',sans-serif; font-weight:600; font-size:.95rem;
+    color:var(--ink); background:#faf5ff; text-align:center;
+    border:2px solid #eee2f6; border-radius:12px; padding:7px 6px;
+  }
+  .dev-field input:focus-visible { outline:3px dashed var(--aqua); }
+
+  .update-chip {
+    position:fixed; top:14px; left:50%; transform:translateX(-50%);
+    z-index:25; display:flex; align-items:center; gap:2px;
+    background:var(--ink); border-radius:99px;
+    box-shadow:0 8px 24px rgba(74,53,96,.4);
+    animation: toastIn .3s ease;
+    max-width:calc(100vw - 90px);
+  }
+  .chip-main {
+    border:none; background:none; color:#fff; cursor:pointer;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:.82rem;
+    padding:10px 4px 10px 16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .chip-dismiss {
+    border:none; background:none; color:#cdbcf0; cursor:pointer;
+    font-size:.9rem; font-weight:800; padding:10px 14px 10px 6px;
+  }
+  .chip-main:focus-visible, .chip-dismiss:focus-visible { outline:3px dashed var(--aqua); border-radius:99px; }
   .pill-btn.on { background:linear-gradient(90deg, #ffe9f3, #e6fff8); border-color:var(--aqua); color:var(--aqua); }
   .pill-btn:disabled { opacity:.6; cursor:default; }
   .pill-btn:disabled:hover { border-color:#eee2f6; }
@@ -268,7 +329,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v3.2</p>
+  <p class="version-tag">v3.8</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -285,6 +346,12 @@
     </div>
     <div class="stage-label" id="stageLabel">Sleepy Unicorn</div>
     <div class="click-hint" id="clickPowerLabel">+1 per tap</div>
+  </div>
+
+  <div class="meter-wrap" id="meterWrap" hidden>
+    <div class="meter-label"><span>CHILL METER</span><span id="meterPct">0%</span></div>
+    <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+    <div class="chill-banner">😌 MAXIMUM CHILL — EVERYTHING ×<span id="chillMultLabel">5</span>! 😌</div>
   </div>
 
   <div class="decor-shelf" id="decorShelf" hidden></div>
@@ -306,6 +373,7 @@
       <button class="pill-btn wide" id="stickerBtn">🎟️ Sticker Book</button>
       <button class="pill-btn wide" id="saveBtn">💾 Save</button>
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
+      <button class="pill-btn wide" id="updateBtn">🔄 Check for updates</button>
       <button class="pill-btn wide" id="devBtn">🛠️ Dev Menu</button>
       <button class="pill-btn wide danger" id="resetBtn">🔄 Reset All</button>
     </div>
@@ -324,12 +392,27 @@
     <div class="modal-head"><h3>🛠️ Dev Menu</h3><button class="modal-close" id="devClose" aria-label="Close">✕</button></div>
     <p class="modal-sub">Secret experiments live here.</p>
     <div class="menu-list">
+      <button class="pill-btn wide" id="chillBtn">🧊 Chill Meter: OFF</button>
+      <div class="dev-fields">
+        <div class="dev-field">
+          <label for="chillMultInput">Chill multiplier</label>
+          <input type="number" id="chillMultInput" value="5" min="1" max="1000" step="1">
+        </div>
+        <div class="dev-field">
+          <label for="chillClicksInput">Clicks to fill</label>
+          <input type="number" id="chillClicksInput" value="45" min="1" max="1000" step="1">
+        </div>
+      </div>
       <button class="pill-btn wide" id="kittyBtn">🐈 Crazy Kitty Mode 🐈</button>
     </div>
-    <p class="modal-sub" style="margin-top:10px;">Press it and a kitty zooms around for 30 seconds — every catch gives bonus sparkles! Then the button rests for 10 seconds.</p>
+    <p class="modal-sub" style="margin-top:10px;">Chill Meter: fill it by tapping for 12 seconds of ×5 everything. Kitty: press it and a kitty zooms around for 30 seconds — every catch gives bonus sparkles! Then the button rests for 10 seconds.</p>
   </div>
 </div>
 
+<div class="update-chip" id="updateChip" hidden>
+  <button class="chip-main" id="chipRefresh">🌟 New version available — tap to refresh!</button>
+  <button class="chip-dismiss" id="chipDismiss" aria-label="Dismiss">✕</button>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -361,7 +444,15 @@
     return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[u];
   }
   const costOf = it => Math.ceil(it.baseCost * Math.pow(it.costScale, it.owned));
-  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0);
+  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1);
+
+  // Chill Meter state (feature toggles on in the Dev Menu; off by default)
+  let chillEnabled = false;
+  let chillMode = false;
+  let chillTimeLeft = 0;
+  let meter = 0; // 0..100
+  let chillMult = 5;           // Dev Menu: multiplier while super chill mode runs
+  let chillClicksNeeded = 45;  // Dev Menu: taps needed to fill the meter
 
   // ---------- Shop ----------
   const shopEl = $('shop');
@@ -378,7 +469,7 @@
       <span class="cost"></span>`;
     b.addEventListener('click', () => buy(it, b));
     shopEl.appendChild(b);
-    btnRefs[it.id] = { btn: b, costEl: b.querySelector('.cost'), ownedEl: b.querySelector('.owned') };
+    btnRefs[it.id] = b;
   });
 
   function buy(it, btn) {
@@ -392,45 +483,36 @@
   }
 
   // ---------- Clicking ----------
-  // Built for autoclickers: every click is counted instantly (cheap math only).
-  // The expensive stuff (animations, emoji, floating numbers, re-rendering)
-  // is batched and shown at most ~10 times per second, no matter the click rate.
   const uni = $('unicorn');
-  let pendingGain = 0;      // sparkles earned since the last visual flush
-  let lastClickX = 0, lastClickY = 0;
-  let lastFx = 0;
-
   uni.addEventListener('click', e => {
-    sparkles += clickPower; totalEarned += clickPower;
+    const gain = clickPower * (chillMode ? chillMult : 1);
+    sparkles += gain; totalEarned += gain;
     totalTaps++;
-    pendingGain += clickPower;
-    lastClickX = e.clientX; lastClickY = e.clientY;
 
-    const now = performance.now();
-    if (now - lastFx > 100) {
-      lastFx = now;
-      flushClickFx();
+    uni.classList.remove('pop'); void uni.offsetWidth; uni.classList.add('pop');
+
+    const x = e.clientX || (uni.getBoundingClientRect().left + uni.offsetWidth/2);
+    const y = e.clientY || uni.getBoundingClientRect().top;
+    floatNum('+' + fmt(gain) + ' ✨', x, y);
+    sparkleBurst(x, y);
+
+    if (chillEnabled && !chillMode) {
+      meter = Math.min(100, meter + 100 / chillClicksNeeded);
+      if (meter >= 100) startChill();
     }
+    render();
   });
 
-  function flushClickFx() {
-    if (pendingGain <= 0) return;
-    uni.classList.remove('pop'); void uni.offsetWidth; uni.classList.add('pop');
-    const r = uni.getBoundingClientRect();
-    const x = lastClickX || (r.left + r.width/2);
-    const y = lastClickY || r.top;
-    floatNum('+' + fmt(pendingGain) + ' ✨', x, y);   // one number showing the whole batch
-    sparkleBurst(x, y);
-    pendingGain = 0;
+  function startChill() {
+    chillMode = true;
+    chillTimeLeft = 12;
+    document.body.classList.add('chill-mode');
   }
-
-  // Catch any leftover batched clicks (e.g. the final clicks when the clicker stops)
-  setInterval(() => {
-    if (pendingGain > 0 && performance.now() - lastFx > 100) {
-      lastFx = performance.now();
-      flushClickFx();
-    }
-  }, 120);
+  function endChill() {
+    chillMode = false;
+    meter = 0;
+    document.body.classList.remove('chill-mode');
+  }
 
   // ---------- Effects ----------
   const EMOJI = ['✨','🌟','💖','⭐','☀️','🌈'];
@@ -444,13 +526,9 @@
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 900);
   }
-  let liveParticles = 0;
-  const MAX_PARTICLES = 60;
-
   function sparkleBurst(x, y) {
-    for (let i = 0; i < 3; i++) {
-      if (liveParticles >= MAX_PARTICLES) return;
-      liveParticles++;
+    const count = chillMode ? 15 : 3;
+    for (let i = 0; i < count; i++) {
       const el = document.createElement('div');
       el.className = 'confetti';
       el.textContent = EMOJI[Math.random()*EMOJI.length|0];
@@ -458,7 +536,7 @@
       el.style.top = (y + (Math.random()*30-15)) + 'px';
       el.style.animationDuration = (0.9 + Math.random()*0.6) + 's';
       document.body.appendChild(el);
-      setTimeout(() => { el.remove(); liveParticles--; }, 1600);
+      setTimeout(() => el.remove(), 1600);
     }
   }
   function burst(rect, n) {
@@ -469,19 +547,21 @@
   // ---------- Render ----------
   function render() {
     $('sparkleCount').textContent = fmt(Math.floor(sparkles));
-    $('spsLabel').textContent = fmt(totalSps()) + ' sparkles/sec';
-    $('clickPowerLabel').textContent = '+' + fmt(clickPower) + ' per tap';
+    $('spsLabel').textContent = fmt(totalSps()) + ' sparkles/sec' + (chillMode ? '  😌×' + chillMult : '');
+    $('clickPowerLabel').textContent = '+' + fmt(clickPower * (chillMode ? chillMult : 1)) + ' per tap';
+    if (chillEnabled) {
+      $('meterFill').style.width = meter + '%';
+      $('meterPct').textContent = chillMode ? '😌' : Math.floor(meter) + '%';
+    }
 
     ITEMS.forEach(it => {
-      const { btn, costEl, ownedEl } = btnRefs[it.id];
+      const b = btnRefs[it.id];
       const c = costOf(it);
-      const costText = fmt(c) + ' ✨';
-      if (costEl.textContent !== costText) costEl.textContent = costText;
-      const ownedText = it.owned ? '×' + it.owned : '';
-      if (ownedEl.textContent !== ownedText) ownedEl.textContent = ownedText;
+      b.querySelector('.cost').textContent = fmt(c) + ' ✨';
+      b.querySelector('.owned').textContent = it.owned ? '×' + it.owned : '';
       const can = sparkles >= c;
-      if (btn.disabled === can) btn.disabled = !can;
-      btn.classList.toggle('affordable', can);
+      b.disabled = !can;
+      b.classList.toggle('affordable', can);
     });
   }
 
@@ -489,6 +569,13 @@
   setInterval(() => {
     const gain = totalSps() / 10;
     sparkles += gain; totalEarned += gain;
+    if (chillMode) {
+      chillTimeLeft -= 0.1;
+      meter = Math.max(0, (chillTimeLeft / 12) * 100);
+      if (chillTimeLeft <= 0) endChill();
+    } else if (chillEnabled) {
+      meter = Math.max(0, meter - 0.05); // meter slowly drains — keep tapping!
+    }
     checkStickers();
     checkStage();
     render();
@@ -772,7 +859,7 @@
 
   function resetAll() {
     sparkles = 0; totalEarned = 0; totalTaps = 0; clickPower = 1;
-    pendingGain = 0;
+    endChill();
     ITEMS.forEach(i => i.owned = 0);
     unlockedStickers.clear();
     DECOR.forEach(d => d.owned = false);
@@ -792,6 +879,35 @@
   $('devBtn').addEventListener('click', () => { menuModal.hidden = true; devModal.hidden = false; });
   $('devClose').addEventListener('click', () => devModal.hidden = true);
   devModal.addEventListener('click', e => { if (e.target === devModal) devModal.hidden = true; });
+
+  // Chill Meter toggle (default OFF)
+  const chillBtn = $('chillBtn');
+  chillBtn.addEventListener('click', () => {
+    chillEnabled = !chillEnabled;
+    chillBtn.textContent = '🧊 Chill Meter: ' + (chillEnabled ? 'ON' : 'OFF');
+    chillBtn.classList.toggle('on', chillEnabled);
+    $('meterWrap').hidden = !chillEnabled;
+    if (!chillEnabled) endChill();
+    else { meter = 0; render(); }
+  });
+
+  // Chill parameters (Dev Menu)
+  function clampInt(v, min, max, fallback) {
+    const n = Math.round(Number(v));
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  }
+  const chillMultInput = $('chillMultInput');
+  const chillClicksInput = $('chillClicksInput');
+  chillMultInput.addEventListener('input', () => {
+    chillMult = clampInt(chillMultInput.value, 1, 1000, 5);
+    $('chillMultLabel').textContent = chillMult;
+    render();
+  });
+  chillMultInput.addEventListener('blur', () => { chillMultInput.value = chillMult; });
+  chillClicksInput.addEventListener('input', () => {
+    chillClicksNeeded = clampInt(chillClicksInput.value, 1, 1000, 45);
+  });
+  chillClicksInput.addEventListener('blur', () => { chillClicksInput.value = chillClicksNeeded; });
 
   const kittyBtn = $('kittyBtn');
   let kittyEl = null;
@@ -881,16 +997,111 @@
     sparkleBurst(e.clientX, e.clientY);
   }
 
-  // ---------- Drifting clouds ----------
+  // ---------- Update Checker (BlockDuino-style) ----------
+  // Watches your GitHub repo for new commits to the deployed file.
+  // FILL THESE IN once the game lives on GitHub Pages — until then it stays dormant.
+  const UPDATE_CFG = {
+    owner: 'unicorncouch',
+    repo: 'unicorncouch.github.io',
+    branch: 'main',
+    path: 'index.html',   // the deployed file's path in the repo
+    intervalMs: 3 * 60 * 1000,  // auto-check every 3 minutes
+  };
+  let initialSha = null;
+  let latestSha = null;
+  let dismissedSha = null;
+
+  const updaterEnabled = () => UPDATE_CFG.owner && UPDATE_CFG.repo;
+
+  async function fetchLatestSha() {
+    try {
+      const url = `https://api.github.com/repos/${UPDATE_CFG.owner}/${UPDATE_CFG.repo}/commits?path=${encodeURIComponent(UPDATE_CFG.path)}&sha=${UPDATE_CFG.branch}&per_page=1`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data[0] && data[0].sha) || null;
+    } catch { return null; }
+  }
+
+  const updateChip = $('updateChip');
+  function showUpdateChip() { updateChip.hidden = false; }
+  $('chipRefresh').addEventListener('click', () => {
+    storageSave();          // don't lose progress on the way out
+    location.reload();
+  });
+  $('chipDismiss').addEventListener('click', () => {
+    dismissedSha = latestSha;
+    updateChip.hidden = true;
+  });
+
+  async function checkForUpdate() {
+    if (!updaterEnabled()) return;
+    const sha = await fetchLatestSha();
+    if (!sha) return;
+    if (initialSha === null) { initialSha = sha; latestSha = sha; return; }
+    if (sha !== initialSha) {
+      latestSha = sha;
+      if (sha !== dismissedSha) showUpdateChip();
+    }
+  }
+
+  // User-triggered check with clear feedback for every outcome
+  async function manualUpdateCheck() {
+    if (!updaterEnabled()) {
+      toast('Updater not set up yet — this copy checks nothing.');
+      return;
+    }
+    toast('Checking for updates…');
+    const sha = await fetchLatestSha();
+    if (!sha) { toast("Couldn't reach GitHub. Check your connection."); return; }
+    if (initialSha === null) { initialSha = sha; latestSha = sha; toast("You're on the latest version! ✅"); return; }
+    if (sha === initialSha) { toast("You're on the latest version! ✅"); return; }
+    latestSha = sha;
+    showUpdateChip();       // manual check ignores dismissal — you asked!
+    toast('New version found! 🌟');
+  }
+  $('updateBtn').addEventListener('click', () => { menuModal.hidden = true; manualUpdateCheck(); });
+
+  // Kick off the auto-checker after boot (delayed so it doesn't slow page load)
+  setTimeout(() => {
+    checkForUpdate();
+    setInterval(checkForUpdate, UPDATE_CFG.intervalMs);
+  }, 8000);
+
+  // ---------- Drifting clouds (don't touch them!) ----------
   const cloudsEl = $('clouds');
+  function cloudSteal(e, cloud) {
+    const ownedItems = ITEMS.filter(i => i.owned > 0);
+    const lostSparkles = Math.floor(sparkles);
+    if (lostSparkles <= 0 && ownedItems.length === 0) {
+      toast('The cloud grumbles… you have nothing to take! ☁️');
+      return;
+    }
+    // Gulp all current sparkles
+    sparkles = 0;
+    // …and one random upgrade
+    let lostName = '';
+    if (ownedItems.length > 0) {
+      const victim = ownedItems[Math.random() * ownedItems.length | 0];
+      victim.owned--;
+      if (victim.clickMult) clickPower = Math.max(1, clickPower / victim.clickMult);
+      lostName = ' and a ' + victim.name + ' ' + victim.icon;
+    }
+    cloud.classList.remove('gulp'); void cloud.offsetWidth; cloud.classList.add('gulp');
+    floatNum('☁️ -' + fmt(lostSparkles) + ' ✨', e.clientX, e.clientY);
+    toast('⛈️ Oh no! The cloud gobbled ' + fmt(lostSparkles) + ' sparkles' + lostName + '!');
+    render();
+  }
   for (let i = 0; i < 7; i++) {
     const c = document.createElement('span');
     c.textContent = '☁️';
-    c.style.top = (Math.random()*70) + 'vh';
+    c.setAttribute('title', '…probably don\u2019t touch this');
+    c.style.top = (Math.random()*24) + 'vh';   // clouds keep to the sky, above the play area
     c.style.left = (Math.random()*100) + 'vw';
     c.style.fontSize = (18 + Math.random()*30) + 'px';
     c.style.animationDuration = (40 + Math.random()*50) + 's';
     c.style.animationDelay = (-Math.random()*40) + 's';
+    c.addEventListener('click', e => cloudSteal(e, c));
     cloudsEl.appendChild(c);
   }
 
