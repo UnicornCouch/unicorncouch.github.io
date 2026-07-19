@@ -73,6 +73,33 @@
   }
   .sparkles { font-size: clamp(1.8rem, 7vw, 2.4rem); font-weight:700; color:var(--sun); text-shadow:0 2px 12px rgba(255,179,71,.5); }
   .sps { text-align:center; color:var(--aqua); font-weight:700; font-size:.9rem; margin-bottom:10px; }
+  .gems {
+    text-align:center; font-family:'Fredoka',sans-serif; font-weight:600; font-size:.85rem;
+    color:#7a4fd4; background:#f3ecff; border:2px solid #ddc9ff;
+    border-radius:99px; padding:4px 14px; width:fit-content; margin:0 auto 10px;
+  }
+  .pill-btn.rainbow {
+    background: linear-gradient(90deg, #ff5fa2, #ffb347, #ffe95f, #6fe3a0, #5fc9e3, #9b7fe8, #ff5fa2);
+    background-size: 300% 100%;
+    animation: rainbowShift 4s linear infinite;
+    color:#fff; border-color:transparent;
+    text-shadow:0 1px 3px rgba(74,53,96,.4);
+  }
+  @keyframes rainbowShift { to { background-position:300% 0; } }
+  #rebirthBtn { display:block; margin:0 auto 10px; max-width:340px; }
+  .rebirth-gain {
+    text-align:center; font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.1rem;
+    color:#7a4fd4; margin:10px 0;
+  }
+  .gift {
+    position:fixed; left:50%; top:38vh; transform:translateX(-50%);
+    z-index:17; font-size:4rem; padding:14px;
+    background:none; border:none; cursor:pointer;
+    filter: drop-shadow(0 8px 24px rgba(255,95,162,.5));
+    animation: giftBob 1.2s ease-in-out infinite;
+  }
+  @keyframes giftBob { 0%,100%{transform:translateX(-50%) scale(1) rotate(-4deg)} 50%{transform:translateX(-50%) scale(1.1) rotate(4deg)} }
+  .gift:focus-visible { outline:3px dashed var(--aqua); outline-offset:4px; border-radius:20px; }
 
   .unicorn-zone { display:flex; flex-direction:column; align-items:center; margin:6px 0 10px; }
   .uni-stage { position:relative; display:inline-block; }
@@ -119,14 +146,60 @@
     66%  { background-color:#e3ecff; background-image: linear-gradient(180deg, #e3ecff 0%, #ffe9f5 100%); }
     100% { background-color:#ffe3f1; background-image: linear-gradient(180deg, #ffe3f1 0%, #d9e9ff 100%); }
   }
-  .decor-shelf {
-    display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
-    background:linear-gradient(180deg, #fff8ee, #ffeed6);
-    border:2px solid #f2ddba; border-radius:16px;
-    padding:8px 14px; margin:4px 0 10px;
-    font-size:1.6rem;
-    box-shadow:0 3px 10px rgba(74,53,96,.08);
+  .room {
+    position:relative;
+    width:100%; max-width:400px;
+    min-height:230px;
+    display:flex; align-items:center; justify-content:center;
   }
+  .rug {
+    position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+    width:72%; height:26px; border-radius:50%;
+    background:radial-gradient(ellipse at center, rgba(255,95,162,.18), rgba(255,95,162,.05) 70%, transparent 72%);
+    pointer-events:none;
+  }
+  .rdec {
+    position:absolute; pointer-events:none; z-index:1;
+    font-size:clamp(1.6rem, 7vw, 2.2rem);
+    filter: drop-shadow(0 3px 6px rgba(74,53,96,.2));
+  }
+  #rd-poster { top:0;  left:4%; }
+  #rd-window { top:0;  left:27%; }
+  #rd-clock  { top:1%; right:27%; font-size:clamp(1.3rem, 5.5vw, 1.8rem); }
+  #rd-fish   { top:2%; right:4%; animation: swim 3s ease-in-out infinite; }
+  #rd-tv     { bottom:28%; left:2%; animation: tvGlow 2.2s ease-in-out infinite; }
+  #rd-lamp   { bottom:26%; right:2%; }
+  #rd-plant  { bottom:6%; left:2%; }
+  #rd-teddy  { bottom:0; left:16%; }
+  #rd-pillow { bottom:0; right:16%; }
+  #rd-lights {
+    top:-14px; left:50%; transform:translateX(-50%);
+    font-size:.85rem; letter-spacing:10px; white-space:nowrap;
+    animation: twinkleLights 1.6s ease-in-out infinite;
+  }
+  @keyframes twinkleLights { 0%,100%{opacity:.55; text-shadow:0 0 4px rgba(255,215,95,.6)} 50%{opacity:1; text-shadow:0 0 12px rgba(255,215,95,1)} }
+  @keyframes tvGlow {
+    0%,100% { filter: drop-shadow(0 3px 6px rgba(74,53,96,.2)) drop-shadow(0 0 6px rgba(95,201,227,.5)); }
+    50%     { filter: drop-shadow(0 3px 6px rgba(74,53,96,.2)) drop-shadow(0 0 14px rgba(155,127,232,.8)); }
+  }
+  .curtained { padding:0 12px; }
+  .curtained::before, .curtained::after {
+    content:''; position:absolute; top:-2px; bottom:2px; width:10px;
+    background:linear-gradient(180deg, var(--pink), #ffb6d3);
+    border-radius:0 0 8px 8px;
+    box-shadow:0 2px 4px rgba(74,53,96,.2);
+  }
+  .curtained::before { left:0; }
+  .curtained::after { right:0; }
+  .on-shelf { display:inline-flex; flex-direction:column; align-items:center; }
+  .on-shelf::after {
+    content:''; width:135%; height:7px; margin-top:1px;
+    background:linear-gradient(180deg,#d9ab6f,#c2925a);
+    border-radius:4px;
+    box-shadow:0 2px 4px rgba(74,53,96,.2);
+  }
+  @keyframes swim { 0%,100%{transform:translateX(0) scaleX(1)} 45%{transform:translateX(6px) scaleX(1)} 50%{transform:translateX(6px) scaleX(-1)} 95%{transform:translateX(0) scaleX(-1)} }
+
   .section-sub { color:var(--dim); font-size:.78rem; margin:-4px 0 8px; }
 
   .butterfly {
@@ -181,6 +254,17 @@
   .menu-fab:hover { border-color:var(--pink); }
   .menu-fab:active { transform:scale(.94); }
   .menu-fab:focus-visible { outline:3px dashed var(--aqua); outline-offset:2px; }
+  .pause-fab { right:66px; }
+  .pause-card { text-align:center; }
+  .pause-big { font-size:3rem; }
+  .pause-title { font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.3rem; color:var(--ink); margin-bottom:4px; }
+  body.paused .clouds span,
+  body.paused .rdec,
+  body.paused .acc,
+  body.paused .butterfly,
+  body.paused .kitty,
+  body.paused h1 { animation-play-state: paused !important; }
+  body.paused .kitty { transition:none !important; }
   .menu-modal { max-width:300px; }
   .menu-list { display:flex; flex-direction:column; gap:8px; }
   .dev-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -329,20 +413,34 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v3.9</p>
+  <p class="version-tag">v4.3</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
   <div class="sps" id="spsLabel">0 sparkles/sec</div>
+  <div class="gems" id="gemLine" hidden>💎 <b id="gemCount">0</b> Rainbow Gems · everything +<span id="gemBoost">0</span>%</div>
 
   <div class="unicorn-zone">
-    <div class="uni-stage">
-      <span class="acc" id="accSleep">💤</span>
-      <span class="acc" id="accCoffee" hidden>☕</span>
-      <span class="acc" id="accTeddy" hidden>🧸</span>
-      <span class="acc" id="accCat" hidden>🐱</span>
-      <span class="acc" id="accCrown" hidden>👑</span>
-      <button id="unicorn" aria-label="Tap the unicorn to earn sparkles">🦄</button>
+    <div class="room">
+      <span class="rdec fairy" id="rd-lights" hidden>✨✨✨✨✨✨✨</span>
+      <span class="rdec" id="rd-poster" hidden>🖼️</span>
+      <span class="rdec curtained" id="rd-window" hidden>🪟</span>
+      <span class="rdec" id="rd-clock" hidden>🕰️</span>
+      <span class="rdec on-shelf" id="rd-fish" hidden>🐠</span>
+      <span class="rdec" id="rd-tv" hidden>📺</span>
+      <span class="rdec" id="rd-lamp" hidden>💡</span>
+      <span class="rdec" id="rd-plant" hidden>🪴</span>
+      <span class="rdec" id="rd-teddy" hidden>🧺</span>
+      <span class="rdec" id="rd-pillow" hidden>🛏️</span>
+      <div class="rug"></div>
+      <div class="uni-stage">
+        <span class="acc" id="accSleep">💤</span>
+        <span class="acc" id="accCoffee" hidden>☕</span>
+        <span class="acc" id="accTeddy" hidden>🧸</span>
+        <span class="acc" id="accCat" hidden>🐱</span>
+        <span class="acc" id="accCrown" hidden>👑</span>
+        <button id="unicorn" aria-label="Tap the unicorn to earn sparkles">🦄</button>
+      </div>
     </div>
     <div class="stage-label" id="stageLabel">Sleepy Unicorn</div>
     <div class="click-hint" id="clickPowerLabel">+1 per tap</div>
@@ -354,7 +452,7 @@
     <div class="chill-banner">😌 MAXIMUM CHILL — EVERYTHING ×<span id="chillMultLabel">5</span>! 😌</div>
   </div>
 
-  <div class="decor-shelf" id="decorShelf" hidden></div>
+  <button class="pill-btn rainbow wide" id="rebirthBtn" hidden>🌈 Rainbow Rebirth</button>
 
   <h2>Breakfast Table</h2>
   <div class="shop" id="shop"></div>
@@ -365,6 +463,16 @@
 </div>
 
 <button class="menu-fab" id="menuBtn" aria-label="Open menu">☰</button>
+<button class="menu-fab pause-fab" id="pauseBtn" aria-label="Pause game">⏸️</button>
+
+<div class="modal-back" id="pauseModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <div class="pause-big">⏸️</div>
+    <h3 class="pause-title">Game Paused</h3>
+    <p class="modal-sub" style="text-align:center;">Everything is frozen — sparkles, timers, kitties, all of it.</p>
+    <button class="pill-btn wide rainbow" id="resumeBtn">▶️ Resume</button>
+  </div>
+</div>
 
 <div class="modal-back" id="menuModal" hidden>
   <div class="modal menu-modal">
@@ -413,15 +521,46 @@
   <button class="chip-main" id="chipRefresh">🌟 New version available — tap to refresh!</button>
   <button class="chip-dismiss" id="chipDismiss" aria-label="Dismiss">✕</button>
 </div>
+<div class="modal-back" id="rebirthModal" hidden>
+  <div class="modal menu-modal">
+    <div class="modal-head"><h3>🌈 Rainbow Rebirth</h3><button class="modal-close" id="rebirthClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Start a brand-new game and turn everything you earned into <b>Rainbow Gems</b>. Each gem makes EVERYTHING <b>10% stronger — forever</b>.</p>
+    <p class="rebirth-gain">You'll gain 💎 <b id="rebirthGems">0</b> gems</p>
+    <p class="modal-sub">You'll lose: your sparkles and all your foods.<br>You'll keep: gems, stickers, decorations, and your unicorn's memories.</p>
+    <div class="menu-list">
+      <button class="pill-btn wide rainbow" id="rebirthGo">🌈 Be reborn!</button>
+      <button class="pill-btn wide" id="rebirthCancel">Not yet</button>
+    </div>
+  </div>
+</div>
+<div class="modal-back" id="surpriseModal" hidden>
+  <div class="modal menu-modal">
+    <div class="modal-head"><h3>🎁 SURPRISE!</h3><button class="modal-close" id="surpriseClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub" style="font-size:.9rem;">Welcome to the <b>🌈 RAINBOW UPDATE</b>!<br><br>
+    A new power has arrived: <b>Rainbow Rebirth</b>. Once you've earned enough sparkles, a rainbow button appears — press it to start over and turn your sparkles into <b>Rainbow Gems 💎</b>.<br><br>
+    Every gem makes your taps and foods <b>10% stronger, forever</b>. The more you play, the more powerful you become!<br><br>
+    And inside this gift box… <b>3 free gems</b> to get you started. 💎💎💎</p>
+    <div class="menu-list">
+      <button class="pill-btn wide rainbow" id="surpriseOk">🌈 Let's go!</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
 (() => {
   // ---------- State ----------
   let sparkles = 0;
-  let totalEarned = 0;
+  let totalEarned = 0;      // this run (resets on Rainbow Rebirth)
+  let lifetimeEarned = 0;   // forever (never resets — stages & stickers use this)
   let totalTaps = 0;
   let clickPower = 1;
+  let gems = 0;             // Rainbow Gems — each is +10% to everything, permanently
+  let rebirths = 0;
+  let giftOpened = false;
+
+  const gemMult = () => 1 + gems * 0.1;
+  function earn(n) { sparkles += n; totalEarned += n; lifetimeEarned += n; }
 
   const ITEMS = [
     { id:'banana',    icon:'🍌', name:'Power Banana',        desc:'Doubles your tap power',  baseCost:50,     sps:0,    clickMult:2, owned:0, costScale:6 },
@@ -444,7 +583,7 @@
     return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[u];
   }
   const costOf = it => Math.ceil(it.baseCost * Math.pow(it.costScale, it.owned));
-  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1);
+  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1) * gemMult();
 
   // Chill Meter state (feature toggles on in the Dev Menu; off by default)
   let chillEnabled = false;
@@ -485,8 +624,8 @@
   // ---------- Clicking ----------
   const uni = $('unicorn');
   uni.addEventListener('click', e => {
-    const gain = clickPower * (chillMode ? chillMult : 1);
-    sparkles += gain; totalEarned += gain;
+    const gain = clickPower * (chillMode ? chillMult : 1) * gemMult();
+    earn(gain);
     totalTaps++;
 
     uni.classList.remove('pop'); void uni.offsetWidth; uni.classList.add('pop');
@@ -548,7 +687,7 @@
   function render() {
     $('sparkleCount').textContent = fmt(Math.floor(sparkles));
     $('spsLabel').textContent = fmt(totalSps()) + ' sparkles/sec' + (chillMode ? '  😌×' + chillMult : '');
-    $('clickPowerLabel').textContent = '+' + fmt(clickPower * (chillMode ? chillMult : 1)) + ' per tap';
+    $('clickPowerLabel').textContent = '+' + fmt(clickPower * (chillMode ? chillMult : 1) * gemMult()) + ' per tap';
     if (chillEnabled) {
       $('meterFill').style.width = meter + '%';
       $('meterPct').textContent = chillMode ? (chillClicksNeeded === 0 ? '♾️' : '😌') : Math.floor(meter) + '%';
@@ -567,8 +706,9 @@
 
   // ---------- Loops ----------
   setInterval(() => {
+    if (paused) return;   // pause freezes production, meters, and checks
     const gain = totalSps() / 10;
-    sparkles += gain; totalEarned += gain;
+    earn(gain);
     if (chillMode) {
       if (chillClicksNeeded === 0) {
         meter = 100; // infinite chill — never counts down
@@ -585,15 +725,16 @@
     checkStage();
     render();
     renderDecor();
+    renderRebirth();
   }, 100);
 
   // ---------- Sticker Book ----------
   const foodItems = () => ITEMS.filter(i => i.sps > 0);
   const STICKERS = [
-    { id:'first',    icon:'🌟', name:'First Sparkle',   desc:'Earn your very first sparkle',  cond:() => totalEarned >= 1 },
-    { id:'hundred',  icon:'💯', name:'Sparkle Starter', desc:'Earn 100 sparkles',             cond:() => totalEarned >= 100 },
-    { id:'storm',    icon:'✨', name:'Sparkle Storm',   desc:'Earn 10,000 sparkles',          cond:() => totalEarned >= 10000 },
-    { id:'legend',   icon:'🌈', name:'Sparkle Legend',  desc:'Earn 1,000,000 sparkles',       cond:() => totalEarned >= 1e6 },
+    { id:'first',    icon:'🌟', name:'First Sparkle',   desc:'Earn your very first sparkle',  cond:() => lifetimeEarned >= 1 },
+    { id:'hundred',  icon:'💯', name:'Sparkle Starter', desc:'Earn 100 sparkles',             cond:() => lifetimeEarned >= 100 },
+    { id:'storm',    icon:'✨', name:'Sparkle Storm',   desc:'Earn 10,000 sparkles',          cond:() => lifetimeEarned >= 10000 },
+    { id:'legend',   icon:'🌈', name:'Sparkle Legend',  desc:'Earn 1,000,000 sparkles',       cond:() => lifetimeEarned >= 1e6 },
     { id:'tap100',   icon:'👆', name:'Tap Rookie',      desc:'Tap the unicorn 100 times',     cond:() => totalTaps >= 100 },
     { id:'tap1k',    icon:'🖐️', name:'Tap Master',      desc:'Tap the unicorn 1,000 times',   cond:() => totalTaps >= 1000 },
     { id:'tap10k',   icon:'⚡', name:'Tap Machine',     desc:'Tap the unicorn 10,000 times',  cond:() => totalTaps >= 10000 },
@@ -603,6 +744,9 @@
     { id:'banana',   icon:'🍌', name:'Banana Power',    desc:'Own 3 Power Bananas',           cond:() => ITEMS.find(i => i.id === 'banana').owned >= 3 },
     { id:'table',    icon:'🛋️', name:'Full Table',      desc:'Own at least 1 of every food',  cond:() => foodItems().every(i => i.owned >= 1) },
     { id:'bfly',     icon:'🦋', name:'Butterfly Catcher', desc:'Catch a golden butterfly',    cond:() => butterfliesCaught >= 1 },
+    { id:'reborn',   icon:'🌈', name:'Reborn in Rainbows', desc:'Do your first Rainbow Rebirth', cond:() => rebirths >= 1 },
+    { id:'gem10',    icon:'💎', name:'Gem Collector',      desc:'Hold 10 Rainbow Gems',       cond:() => gems >= 10 },
+    { id:'house',    icon:'🏠', name:'Full House',         desc:'Own every decoration',       cond:() => DECOR.every(d => d.owned) },
   ];
   const unlockedStickers = new Set();
 
@@ -656,11 +800,15 @@
   // ---------- Save Codes ----------
   function makeSave() {
     const state = {
-      v: 1,
+      v: 2,
       s: Math.floor(sparkles),
       te: Math.floor(totalEarned),
+      le: Math.floor(lifetimeEarned),
       tt: totalTaps,
       cp: clickPower,
+      g: gems,
+      rb: rebirths,
+      gift: giftOpened,
       own: Object.fromEntries(ITEMS.map(i => [i.id, i.owned])),
       st: [...unlockedStickers],
       dec: DECOR.filter(d => d.owned).map(d => d.id),
@@ -673,8 +821,12 @@
     if (typeof state.s !== 'number') throw new Error('bad save');
     sparkles = state.s || 0;
     totalEarned = state.te || 0;
+    lifetimeEarned = state.le || state.te || 0;  // old saves: lifetime = run total
     totalTaps = state.tt || 0;
     clickPower = state.cp || 1;
+    gems = state.g || 0;
+    rebirths = state.rb || 0;
+    giftOpened = !!state.gift;
     ITEMS.forEach(i => { i.owned = (state.own && state.own[i.id]) || 0; });
     unlockedStickers.clear();
     (state.st || []).forEach(id => unlockedStickers.add(id));
@@ -707,7 +859,7 @@
   let currentStage = -1;
   function checkStage() {
     let idx = 0;
-    for (let i = 0; i < STAGES.length; i++) if (totalEarned >= STAGES[i].at) idx = i;
+    for (let i = 0; i < STAGES.length; i++) if (lifetimeEarned >= STAGES[i].at) idx = i;
     if (idx === currentStage) return;
     // Apply every stage up to the current one (covers loads from save codes)
     for (let i = 0; i <= idx; i++) {
@@ -725,12 +877,16 @@
 
   // ---------- Couch Decorations ----------
   const DECOR = [
-    { id:'pillow',  icon:'🛏️', name:'Cozy Pillow',  cost:500 },
-    { id:'teddy',   icon:'🧺', name:'Snack Basket', cost:5000 },
-    { id:'plant',   icon:'🪴', name:'Happy Plant',  cost:25000 },
-    { id:'lamp',    icon:'💡', name:'Warm Lamp',    cost:100000 },
-    { id:'poster',  icon:'🖼️', name:'Cute Poster',  cost:500000 },
-    { id:'fish',    icon:'🐠', name:'Fish Tank',    cost:2e6 },
+    { id:'pillow',  icon:'🛏️', name:'Cozy Pillow',   cost:500,    where:'on the couch' },
+    { id:'teddy',   icon:'🧺', name:'Snack Basket',  cost:5000,   where:'on the floor' },
+    { id:'plant',   icon:'🪴', name:'Happy Plant',   cost:25000,  where:'in the corner' },
+    { id:'lamp',    icon:'💡', name:'Warm Lamp',     cost:100000, where:'by the couch' },
+    { id:'poster',  icon:'🖼️', name:'Cute Poster',   cost:500000, where:'on the wall' },
+    { id:'fish',    icon:'🐠', name:'Fish Tank',     cost:2e6,    where:'on a shelf' },
+    { id:'window',  icon:'🪟', name:'Sunny Window',  cost:8e6,    where:'on the wall, with curtains' },
+    { id:'tv',      icon:'📺', name:'Cartoon TV',    cost:30e6,   where:'across from the couch' },
+    { id:'lights',  icon:'✨', name:'Fairy Lights',  cost:150e6,  where:'strung across the ceiling' },
+    { id:'clock',   icon:'🕰️', name:'Tick-Tock Clock', cost:600e6, where:'on the wall' },
   ];
   const decorShopEl = $('decorShop');
   const decorRefs = {};
@@ -742,7 +898,7 @@
       <span class="icon">${d.icon}</span>
       <span class="info">
         <span class="name">${d.name}</span><br>
-        <span class="desc">A decoration for the couch</span>
+        <span class="desc">Goes ${d.where}</span>
       </span>
       <span class="cost"></span>`;
     b.addEventListener('click', () => buyDecor(d, b));
@@ -759,11 +915,9 @@
     render();
   }
   function renderDecor() {
-    const shelf = $('decorShelf');
-    const ownedIcons = DECOR.filter(d => d.owned).map(d => d.icon);
-    shelf.hidden = ownedIcons.length === 0;
-    shelf.textContent = ownedIcons.join(' ');
     DECOR.forEach(d => {
+      const spot = $('rd-' + d.id);
+      if (spot) spot.hidden = !d.owned;
       const { btn, costEl } = decorRefs[d.id];
       if (d.owned) {
         costEl.textContent = 'Owned ✓';
@@ -786,6 +940,7 @@
     setTimeout(spawnButterfly, 90000 + Math.random() * 90000);
   }
   function spawnButterfly() {
+    if (paused) { setTimeout(spawnButterfly, 5000); return; }  // try again after the pause
     const bf = document.createElement('button');
     bf.className = 'butterfly';
     bf.textContent = '🦋';
@@ -800,7 +955,7 @@
       butterfliesCaught++;
       // Bonus: 30 seconds of production, or a big tap bundle — whichever is more
       const bonus = Math.max(100, Math.floor(totalSps() * 30), clickPower * 25);
-      sparkles += bonus; totalEarned += bonus;
+      earn(bonus);
       floatNum('🦋 +' + fmt(bonus) + ' ✨', e.clientX, e.clientY);
       sparkleBurst(e.clientX, e.clientY);
       toast('Golden butterfly! +' + fmt(bonus) + ' sparkles 🦋');
@@ -835,6 +990,25 @@
   });
   storageLoad(true);
 
+  // ---------- Pause ----------
+  let paused = false;
+  const pauseModal = $('pauseModal');
+  function pauseGame() {
+    paused = true;
+    document.body.classList.add('paused');
+    // Close other modals so only the pause card shows
+    document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
+    pauseModal.hidden = false;
+  }
+  function resumeGame() {
+    paused = false;
+    document.body.classList.remove('paused');
+    pauseModal.hidden = true;
+  }
+  $('pauseBtn').addEventListener('click', pauseGame);
+  $('resumeBtn').addEventListener('click', resumeGame);
+  pauseModal.addEventListener('click', e => { if (e.target === pauseModal) resumeGame(); });
+
   // ---------- Menu & Reset ----------
   const menuModal = $('menuModal');
   $('menuBtn').addEventListener('click', () => { disarmReset(); menuModal.hidden = false; });
@@ -863,7 +1037,8 @@
   });
 
   function resetAll() {
-    sparkles = 0; totalEarned = 0; totalTaps = 0; clickPower = 1;
+    sparkles = 0; totalEarned = 0; lifetimeEarned = 0; totalTaps = 0; clickPower = 1;
+    gems = 0; rebirths = 0;
     endChill();
     ITEMS.forEach(i => i.owned = 0);
     unlockedStickers.clear();
@@ -935,27 +1110,29 @@
     kittyBtn.disabled = true;
     kittyBtn.classList.add('on');
     spawnKitty();
-    const endsAt = performance.now() + KITTY_DURATION;
+    let remaining = KITTY_DURATION;
+    kittyBtn.textContent = '🐈 Kitty time! ' + Math.ceil(remaining / 1000) + 's';
     kittyUiTimer = setInterval(() => {
-      const left = Math.ceil((endsAt - performance.now()) / 1000);
-      if (left > 0) {
-        kittyBtn.textContent = '🐈 Kitty time! ' + left + 's';
+      if (paused) return;                    // frozen while paused
+      remaining -= 200;
+      if (remaining > 0) {
+        kittyBtn.textContent = '🐈 Kitty time! ' + Math.ceil(remaining / 1000) + 's';
       } else {
         clearInterval(kittyUiTimer);
         removeKitty();
         startKittyCooldown();
       }
     }, 200);
-    kittyBtn.textContent = '🐈 Kitty time! 30s';
     toast('🐈 The kitty is loose! 30 seconds!');
   }
   function startKittyCooldown() {
     kittyBtn.classList.remove('on');
-    const readyAt = performance.now() + KITTY_COOLDOWN;
+    let remaining = KITTY_COOLDOWN;
     kittyUiTimer = setInterval(() => {
-      const left = Math.ceil((readyAt - performance.now()) / 1000);
-      if (left > 0) {
-        kittyBtn.textContent = '💤 Kitty resting… ' + left + 's';
+      if (paused) return;                    // frozen while paused
+      remaining -= 200;
+      if (remaining > 0) {
+        kittyBtn.textContent = '💤 Kitty resting… ' + Math.ceil(remaining / 1000) + 's';
       } else {
         clearInterval(kittyUiTimer);
         kittyBtn.textContent = '🐈 Crazy Kitty Mode 🐈';
@@ -980,7 +1157,7 @@
     if (kittyEl) { kittyEl.remove(); kittyEl = null; }
   }
   function dashKitty() {
-    if (!kittyEl) return;
+    if (!kittyEl || paused) return;
     const curX = parseFloat(kittyEl.style.left) || 40;
     const newX = 5 + Math.random() * 75;   // vw
     // Keep the kitty off the shop: never dash below where the shop starts on screen
@@ -1000,7 +1177,7 @@
   function petKitty(e) {
     // Every catch rewards — catching the darting kitty is the challenge!
     const bonus = Math.max(10, clickPower * 5, Math.floor(totalSps() * 2));
-    sparkles += bonus; totalEarned += bonus;
+    earn(bonus);
     floatNum('🐈 +' + fmt(bonus) + ' ✨', e.clientX, e.clientY);
     sparkleBurst(e.clientX, e.clientY);
   }
@@ -1075,6 +1252,87 @@
     checkForUpdate();
     setInterval(checkForUpdate, UPDATE_CFG.intervalMs);
   }, 8000);
+
+  // ---------- 🌈 Rainbow Rebirth (prestige) ----------
+  const pendingGems = () => Math.floor(Math.sqrt(totalEarned / 1e5));
+  const rebirthBtn = $('rebirthBtn');
+  const rebirthModal = $('rebirthModal');
+
+  rebirthBtn.addEventListener('click', () => {
+    $('rebirthGems').textContent = pendingGems();
+    rebirthModal.hidden = false;
+  });
+  $('rebirthClose').addEventListener('click', () => rebirthModal.hidden = true);
+  $('rebirthCancel').addEventListener('click', () => rebirthModal.hidden = true);
+  rebirthModal.addEventListener('click', e => { if (e.target === rebirthModal) rebirthModal.hidden = true; });
+  $('rebirthGo').addEventListener('click', () => {
+    const gained = pendingGems();
+    if (gained < 1) { rebirthModal.hidden = true; return; }
+    gems += gained;
+    rebirths++;
+    // New run: sparkles and foods reset; gems, stickers, decor, lifetime all stay
+    sparkles = 0; totalEarned = 0; clickPower = 1;
+    ITEMS.forEach(i => i.owned = 0);
+    endChill();
+    rebirthModal.hidden = true;
+    rainbowStorm(90);
+    toast('🌈 REBORN! +' + gained + ' Rainbow Gems 💎');
+    storageSave();
+    render();
+  });
+
+  const STORM = ['🌈','💎','✨','🦄','🌟','💖'];
+  function rainbowStorm(n) {
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      el.textContent = STORM[Math.random()*STORM.length|0];
+      el.style.left = (Math.random()*100) + 'vw';
+      el.style.top = '-6vh';
+      el.style.fontSize = (14 + Math.random()*22) + 'px';
+      el.style.animationDuration = (1.4 + Math.random()*2.2) + 's';
+      el.style.animationDelay = (Math.random()*1.2) + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+  }
+
+  function renderRebirth() {
+    const p = pendingGems();
+    rebirthBtn.hidden = p < 1;
+    if (p >= 1) rebirthBtn.textContent = '🌈 Rainbow Rebirth — gain 💎 ' + p;
+    $('gemLine').hidden = gems < 1;
+    if (gems >= 1) {
+      $('gemCount').textContent = gems;
+      $('gemBoost').textContent = Math.round(gems * 10);
+    }
+  }
+
+  // ---------- 🎁 The Surprise ----------
+  const surpriseModal = $('surpriseModal');
+  function closeSurprise() { surpriseModal.hidden = true; }
+  $('surpriseClose').addEventListener('click', closeSurprise);
+  $('surpriseOk').addEventListener('click', closeSurprise);
+  surpriseModal.addEventListener('click', e => { if (e.target === surpriseModal) closeSurprise(); });
+
+  function maybeShowGift() {
+    if (giftOpened) return;
+    const gift = document.createElement('button');
+    gift.className = 'gift';
+    gift.textContent = '🎁';
+    gift.setAttribute('aria-label', 'A surprise gift! Tap to open');
+    gift.addEventListener('click', () => {
+      giftOpened = true;
+      gems += 3;                    // 3 free gems inside!
+      gift.remove();
+      rainbowStorm(90);
+      surpriseModal.hidden = false;
+      storageSave();
+      render();
+    }, { once: true });
+    document.body.appendChild(gift);
+  }
+  setTimeout(maybeShowGift, 1500);  // after autoload, so it only appears once ever
 
   // ---------- Drifting clouds (don't touch them!) ----------
   const cloudsEl = $('clouds');
