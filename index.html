@@ -413,7 +413,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v4.3</p>
+  <p class="version-tag">v4.5</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -512,6 +512,8 @@
         </div>
       </div>
       <button class="pill-btn wide" id="kittyBtn">🐈 Crazy Kitty Mode 🐈</button>
+      <button class="pill-btn wide" id="priceResetBtn">💸 Reset all prices</button>
+      <button class="pill-btn wide" id="replayGiftBtn">🎁 Replay the surprise</button>
     </div>
     <p class="modal-sub" style="margin-top:10px;">Chill Meter: fill it by tapping for 12 seconds of ×5 everything. Kitty: press it and a kitty zooms around for 30 seconds — every catch gives bonus sparkles! Then the button rests for 10 seconds.</p>
   </div>
@@ -558,6 +560,7 @@
   let gems = 0;             // Rainbow Gems — each is +10% to everything, permanently
   let rebirths = 0;
   let giftOpened = false;
+  let giftGemsGiven = false;  // the 3 free gems only come once, even if the surprise replays
 
   const gemMult = () => 1 + gems * 0.1;
   function earn(n) { sparkles += n; totalEarned += n; lifetimeEarned += n; }
@@ -582,7 +585,7 @@
     while (n >= 1000 && u < units.length - 1) { n /= 1000; u++; }
     return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[u];
   }
-  const costOf = it => Math.ceil(it.baseCost * Math.pow(it.costScale, it.owned));
+  const costOf = it => Math.ceil(it.baseCost * Math.pow(it.costScale, Math.max(0, it.owned - (it.priceResetAt || 0))));
   const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1) * gemMult();
 
   // Chill Meter state (feature toggles on in the Dev Menu; off by default)
@@ -809,7 +812,10 @@
       g: gems,
       rb: rebirths,
       gift: giftOpened,
+      gg: giftGemsGiven,
       own: Object.fromEntries(ITEMS.map(i => [i.id, i.owned])),
+      pr: Object.fromEntries(ITEMS.map(i => [i.id, i.priceResetAt || 0])),
+      rbb: Math.floor(rebirthBaseline),
       st: [...unlockedStickers],
       dec: DECOR.filter(d => d.owned).map(d => d.id),
       bf: butterfliesCaught,
@@ -827,7 +833,12 @@
     gems = state.g || 0;
     rebirths = state.rb || 0;
     giftOpened = !!state.gift;
-    ITEMS.forEach(i => { i.owned = (state.own && state.own[i.id]) || 0; });
+    giftGemsGiven = state.gg !== undefined ? !!state.gg : !!state.gift;  // old saves: opened = granted
+    ITEMS.forEach(i => {
+      i.owned = (state.own && state.own[i.id]) || 0;
+      i.priceResetAt = (state.pr && state.pr[i.id]) || 0;
+    });
+    rebirthBaseline = state.rbb || 0;
     unlockedStickers.clear();
     (state.st || []).forEach(id => unlockedStickers.add(id));
     DECOR.forEach(d => { d.owned = (state.dec || []).includes(d.id); });
@@ -1038,9 +1049,10 @@
 
   function resetAll() {
     sparkles = 0; totalEarned = 0; lifetimeEarned = 0; totalTaps = 0; clickPower = 1;
-    gems = 0; rebirths = 0;
+    gems = 0; rebirths = 0; rebirthBaseline = 0;
+    giftOpened = false; giftGemsGiven = false;  // the present comes back on a full reset
     endChill();
-    ITEMS.forEach(i => i.owned = 0);
+    ITEMS.forEach(i => { i.owned = 0; i.priceResetAt = 0; });
     unlockedStickers.clear();
     DECOR.forEach(d => d.owned = false);
     butterfliesCaught = 0;
@@ -1052,6 +1064,7 @@
     render();
     menuModal.hidden = true;
     toast('Fresh start! 🌅');
+    setTimeout(maybeShowGift, 1500);  // the surprise returns for the new game
   }
 
   // ---------- Dev Menu & Crazy Kitty Mode ----------
@@ -1091,6 +1104,15 @@
     if (prev === 0 && chillClicksNeeded > 0 && chillMode) endChill();
   });
   chillClicksInput.addEventListener('blur', () => { chillClicksInput.value = chillClicksNeeded; });
+
+  // Dev: reset all shop prices to their starting cost, and restart rebirth progress
+  $('priceResetBtn').addEventListener('click', () => {
+    ITEMS.forEach(i => i.priceResetAt = i.owned);
+    rebirthBaseline = totalEarned;
+    toast('💸 Prices reset — everything costs its starting price again!');
+    render();
+    renderRebirth();
+  });
 
   const kittyBtn = $('kittyBtn');
   let kittyEl = null;
@@ -1254,7 +1276,8 @@
   }, 8000);
 
   // ---------- 🌈 Rainbow Rebirth (prestige) ----------
-  const pendingGems = () => Math.floor(Math.sqrt(totalEarned / 1e5));
+  let rebirthBaseline = 0;  // dev price reset moves this so rebirth progress starts fresh
+  const pendingGems = () => Math.floor(Math.sqrt(Math.max(0, totalEarned - rebirthBaseline) / 1e5));
   const rebirthBtn = $('rebirthBtn');
   const rebirthModal = $('rebirthModal');
 
@@ -1272,7 +1295,8 @@
     rebirths++;
     // New run: sparkles and foods reset; gems, stickers, decor, lifetime all stay
     sparkles = 0; totalEarned = 0; clickPower = 1;
-    ITEMS.forEach(i => i.owned = 0);
+    rebirthBaseline = 0;
+    ITEMS.forEach(i => { i.owned = 0; i.priceResetAt = 0; });
     endChill();
     rebirthModal.hidden = true;
     rainbowStorm(90);
@@ -1316,14 +1340,14 @@
   surpriseModal.addEventListener('click', e => { if (e.target === surpriseModal) closeSurprise(); });
 
   function maybeShowGift() {
-    if (giftOpened) return;
+    if (giftOpened || document.querySelector('.gift')) return;
     const gift = document.createElement('button');
     gift.className = 'gift';
     gift.textContent = '🎁';
     gift.setAttribute('aria-label', 'A surprise gift! Tap to open');
     gift.addEventListener('click', () => {
       giftOpened = true;
-      gems += 3;                    // 3 free gems inside!
+      if (!giftGemsGiven) { gems += 3; giftGemsGiven = true; }  // 3 free gems — first open only
       gift.remove();
       rainbowStorm(90);
       surpriseModal.hidden = false;
@@ -1333,6 +1357,14 @@
     document.body.appendChild(gift);
   }
   setTimeout(maybeShowGift, 1500);  // after autoload, so it only appears once ever
+
+  // Dev: replay the surprise (gift + rainbow storm + message; gems only granted once)
+  $('replayGiftBtn').addEventListener('click', () => {
+    document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
+    giftOpened = false;
+    maybeShowGift();
+    toast('🎁 The present is back — and read it this time! 😉');
+  });
 
   // ---------- Drifting clouds (don't touch them!) ----------
   const cloudsEl = $('clouds');
