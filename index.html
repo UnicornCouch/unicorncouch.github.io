@@ -329,7 +329,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v3.8</p>
+  <p class="version-tag">v3.9</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -396,11 +396,11 @@
       <div class="dev-fields">
         <div class="dev-field">
           <label for="chillMultInput">Chill multiplier</label>
-          <input type="number" id="chillMultInput" value="5" min="1" max="1000" step="1">
+          <input type="number" id="chillMultInput" value="5" min="1" step="1">
         </div>
         <div class="dev-field">
-          <label for="chillClicksInput">Clicks to fill</label>
-          <input type="number" id="chillClicksInput" value="45" min="1" max="1000" step="1">
+          <label for="chillClicksInput">Clicks to fill (0 = ∞)</label>
+          <input type="number" id="chillClicksInput" value="45" min="0" step="1">
         </div>
       </div>
       <button class="pill-btn wide" id="kittyBtn">🐈 Crazy Kitty Mode 🐈</button>
@@ -496,7 +496,7 @@
     floatNum('+' + fmt(gain) + ' ✨', x, y);
     sparkleBurst(x, y);
 
-    if (chillEnabled && !chillMode) {
+    if (chillEnabled && !chillMode && chillClicksNeeded > 0) {
       meter = Math.min(100, meter + 100 / chillClicksNeeded);
       if (meter >= 100) startChill();
     }
@@ -551,7 +551,7 @@
     $('clickPowerLabel').textContent = '+' + fmt(clickPower * (chillMode ? chillMult : 1)) + ' per tap';
     if (chillEnabled) {
       $('meterFill').style.width = meter + '%';
-      $('meterPct').textContent = chillMode ? '😌' : Math.floor(meter) + '%';
+      $('meterPct').textContent = chillMode ? (chillClicksNeeded === 0 ? '♾️' : '😌') : Math.floor(meter) + '%';
     }
 
     ITEMS.forEach(it => {
@@ -570,11 +570,16 @@
     const gain = totalSps() / 10;
     sparkles += gain; totalEarned += gain;
     if (chillMode) {
-      chillTimeLeft -= 0.1;
-      meter = Math.max(0, (chillTimeLeft / 12) * 100);
-      if (chillTimeLeft <= 0) endChill();
+      if (chillClicksNeeded === 0) {
+        meter = 100; // infinite chill — never counts down
+      } else {
+        chillTimeLeft -= 0.1;
+        meter = Math.max(0, (chillTimeLeft / 12) * 100);
+        if (chillTimeLeft <= 0) endChill();
+      }
     } else if (chillEnabled) {
-      meter = Math.max(0, meter - 0.05); // meter slowly drains — keep tapping!
+      if (chillClicksNeeded === 0) startChill(); // 0 clicks needed = always chill
+      else meter = Math.max(0, meter - 0.05); // meter slowly drains — keep tapping!
     }
     checkStickers();
     checkStage();
@@ -891,21 +896,24 @@
     else { meter = 0; render(); }
   });
 
-  // Chill parameters (Dev Menu)
-  function clampInt(v, min, max, fallback) {
+  // Chill parameters (Dev Menu) — multiplier is UNCAPPED; clicks 0 = infinite chill
+  function clampInt(v, min, fallback) {
     const n = Math.round(Number(v));
-    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+    return Number.isFinite(n) ? Math.max(min, n) : fallback;
   }
   const chillMultInput = $('chillMultInput');
   const chillClicksInput = $('chillClicksInput');
   chillMultInput.addEventListener('input', () => {
-    chillMult = clampInt(chillMultInput.value, 1, 1000, 5);
-    $('chillMultLabel').textContent = chillMult;
+    chillMult = clampInt(chillMultInput.value, 1, 5);
+    $('chillMultLabel').textContent = fmt(chillMult);
     render();
   });
   chillMultInput.addEventListener('blur', () => { chillMultInput.value = chillMult; });
   chillClicksInput.addEventListener('input', () => {
-    chillClicksNeeded = clampInt(chillClicksInput.value, 1, 1000, 45);
+    const prev = chillClicksNeeded;
+    chillClicksNeeded = clampInt(chillClicksInput.value, 0, 45);
+    // Leaving infinite mode: end the endless chill so normal rules resume
+    if (prev === 0 && chillClicksNeeded > 0 && chillMode) endChill();
   });
   chillClicksInput.addEventListener('blur', () => { chillClicksInput.value = chillClicksNeeded; });
 
