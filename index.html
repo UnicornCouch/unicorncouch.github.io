@@ -31,6 +31,39 @@
     user-select:none;
     -webkit-user-select:none;
   }
+  /* Day/night sky — matches her real clock */
+  body.time-day {
+    background:
+      radial-gradient(600px 300px at 80% -5%, rgba(255,236,150,.9) 0%, rgba(255,236,150,0) 70%),
+      linear-gradient(180deg, #bfe6ff 0%, #d8f0ff 55%, #eefaff 100%);
+    background-attachment: fixed;
+  }
+  body.time-evening {
+    background:
+      radial-gradient(600px 300px at 20% -5%, rgba(255,150,120,.7) 0%, rgba(255,150,120,0) 70%),
+      linear-gradient(180deg, #ffd2a8 0%, #f7b6c8 45%, #cbb6e8 100%);
+    background-attachment: fixed;
+  }
+  body.time-night {
+    background:
+      radial-gradient(500px 260px at 82% -4%, rgba(200,190,255,.28) 0%, rgba(200,190,255,0) 70%),
+      linear-gradient(180deg, #2a2150 0%, #3b2a63 55%, #241b45 100%);
+    background-attachment: fixed;
+  }
+  body.time-night .tagline, body.time-night .click-hint, body.time-night .section-sub,
+  body.time-night .modal-sub { color:#c9bce8; }
+  body.time-night h2, body.time-night .stage-label, body.time-night .meter-label { color:#e8ddff; }
+  body.time-night .gems { background:#3b2a63; border-color:#5a4590; color:#d9c8ff; }
+  body.time-night .clouds span { opacity:.35; }
+  body.time-night #rd-lamp {
+    animation: lampGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes lampGlow {
+    0%,100% { filter: drop-shadow(0 0 8px rgba(255,215,95,.8)) drop-shadow(0 3px 6px rgba(0,0,0,.3)); }
+    50%     { filter: drop-shadow(0 0 18px rgba(255,215,95,1)) drop-shadow(0 3px 6px rgba(0,0,0,.3)); }
+  }
+  #accMoon { top:-10%; right:-16%; }
+
   .clouds { position:fixed; inset:0; pointer-events:none; z-index:2; overflow:hidden; }
   .clouds span {
     position:absolute; opacity:.7;
@@ -190,6 +223,11 @@
   @keyframes tvGlow {
     0%,100% { filter: drop-shadow(0 3px 6px rgba(74,53,96,.2)) drop-shadow(0 0 6px rgba(95,201,227,.5)); }
     50%     { filter: drop-shadow(0 3px 6px rgba(74,53,96,.2)) drop-shadow(0 0 14px rgba(155,127,232,.8)); }
+  }
+  .wx {
+    position:absolute; left:50%; top:48%; transform:translate(-50%,-50%);
+    font-size:.55em; pointer-events:none;
+    animation: bob 3s ease-in-out infinite;
   }
   .curtained { padding:0 12px; }
   .curtained::before, .curtained::after {
@@ -385,6 +423,13 @@
   .quest .q-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--aqua),var(--lav)); transition:width .2s ease; }
   .quest .q-prog { font-size:.7rem; color:var(--dim); margin-top:3px; }
 
+  .closet-item { cursor:pointer; border:2px solid #eee2f6; transition:border-color .15s ease, transform .08s ease; }
+  .closet-item:active { transform:scale(.96); }
+  .closet-item.wearing { border-color:var(--pink); background:#fff4fa; box-shadow:0 0 12px rgba(255,95,162,.3); }
+  .closet-item.cantafford { opacity:.5; }
+  #accWorn { top:-4%; left:50%; transform:translateX(-50%); animation:none; z-index:3; }
+  #accWorn.low { top:auto; bottom:14%; }
+
   .stats-list { display:flex; flex-direction:column; gap:2px; }
   .stat-row {
     display:flex; justify-content:space-between; align-items:baseline; gap:12px;
@@ -468,7 +513,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v5.4</p>
+  <p class="version-tag">v5.9</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -479,7 +524,7 @@
     <div class="room">
       <span class="rdec fairy" id="rd-lights" hidden>✨✨✨✨✨✨✨</span>
       <span class="rdec" id="rd-poster" hidden>🖼️</span>
-      <span class="rdec curtained" id="rd-window" hidden>🪟</span>
+      <span class="rdec curtained" id="rd-window" hidden>🪟<span class="wx" id="windowWx"></span></span>
       <span class="rdec" id="rd-clock" hidden>🕰️</span>
       <span class="rdec on-shelf" id="rd-fish" hidden>🐠</span>
       <span class="rdec" id="rd-tv" hidden>📺</span>
@@ -494,6 +539,8 @@
         <span class="acc" id="accTeddy" hidden>🧸</span>
         <span class="acc" id="accCat" hidden>🐱</span>
         <span class="acc" id="accCrown" hidden>👑</span>
+        <span class="acc" id="accMoon" hidden>🌙</span>
+        <span class="acc" id="accWorn" hidden></span>
         <button id="unicorn" aria-label="Tap the unicorn to earn sparkles">🦄</button>
       </div>
     </div>
@@ -539,6 +586,8 @@
     <div class="menu-list">
       <button class="pill-btn wide" id="stickerBtn">🎟️ Sticker Book</button>
       <button class="pill-btn wide" id="statsBtn">📊 Statistics</button>
+      <button class="pill-btn wide" id="closetBtn">👒 Unicorn Closet</button>
+      <button class="pill-btn wide" id="bankBtn">🏦 Sparkle Bank</button>
       <button class="pill-btn wide" id="saveBtn">💾 Save</button>
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
       <button class="pill-btn wide" id="soundBtn">🔊 Sounds: ON</button>
@@ -615,6 +664,34 @@
     </div>
   </div>
 </div>
+<div class="modal-back" id="bankModal" hidden>
+  <div class="modal menu-modal">
+    <div class="modal-head"><h3>🏦 Sparkle Bank</h3><button class="modal-close" id="bankClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Saved sparkles grow <b>1% every minute</b> while you play — and clouds can't touch them! ☁️🚫</p>
+    <p class="rebirth-gain">In the bank: ✨ <b id="bankBalance">0</b></p>
+    <p class="modal-sub" style="text-align:center;" id="bankRate"></p>
+    <div class="menu-list">
+      <button class="pill-btn wide" id="bankHalf">💰 Deposit half</button>
+      <button class="pill-btn wide" id="bankAll">💰 Deposit all</button>
+      <button class="pill-btn wide" id="bankOut">🤲 Take it all out</button>
+    </div>
+  </div>
+</div>
+<div class="modal-back" id="dailyModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <div class="pause-big">🌅</div>
+    <h3 class="pause-title">Daily Gift!</h3>
+    <p class="modal-sub" style="text-align:center;" id="dailyDesc">Welcome back! Here's a little something for visiting today.</p>
+    <button class="pill-btn wide rainbow" id="dailyClaim">🎁 Claim it!</button>
+  </div>
+</div>
+<div class="modal-back" id="closetModal" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>👒 Unicorn Closet</h3><button class="modal-close" id="closetClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Buy outfits with Rainbow Gems 💎, then tap one to wear it!</p>
+    <div class="sticker-grid" id="closetGrid"></div>
+  </div>
+</div>
 <div class="modal-back" id="statsModal" hidden>
   <div class="modal">
     <div class="modal-head"><h3>📊 Statistics</h3><button class="modal-close" id="statsClose" aria-label="Close">✕</button></div>
@@ -665,7 +742,7 @@
     return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[u];
   }
   const costOf = it => Math.ceil(it.baseCost * Math.pow(it.costScale, Math.max(0, it.owned - (it.priceResetAt || 0))));
-  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1) * gemMult();
+  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1) * gemMult() * weatherMult();
 
   // Chill Meter state (feature toggles on in the Dev Menu; off by default)
   let chillEnabled = false;
@@ -708,7 +785,7 @@
   // ---------- Clicking ----------
   const uni = $('unicorn');
   uni.addEventListener('click', e => {
-    const gain = clickPower * (chillMode ? chillMult : 1) * gemMult();
+    const gain = clickPower * (chillMode ? chillMult : 1) * gemMult() * weatherMult();
     earn(gain);
     totalTaps++;
 
@@ -795,6 +872,11 @@
     if (paused) return;   // pause freezes production, meters, and checks
     sessionSeconds += 0.1;
     totalPlaySeconds += 0.1;
+    if (bankBalance > 0) {
+      const interest = bankBalance * BANK_RATE_PER_MIN / 600;   // per 0.1s tick
+      bankBalance += interest;
+      lifetimeEarned += interest;   // interest counts toward stickers & stages
+    }
     const gain = totalSps() / 10;
     earn(gain);
     if (chillMode) {
@@ -947,6 +1029,10 @@
       pt: Math.floor(totalPlaySeconds),
       fb: foodsBought,
       q: quests,
+      cl: closetOwned,
+      wr: worn,
+      dg: lastDaily,
+      bk: Math.floor(bankBalance),
     };
     return btoa(JSON.stringify(state));
   }
@@ -979,6 +1065,11 @@
     meowUsed = !!state.mw;
     totalPlaySeconds = state.pt || 0;
     foodsBought = state.fb || 0;
+    closetOwned = Array.isArray(state.cl) ? state.cl : [];
+    worn = state.wr || null;
+    lastDaily = state.dg || '';
+    bankBalance = state.bk || 0;
+    renderCloset();
     quests = Array.isArray(state.q) ? state.q.filter(q => q && QUEST_TYPES.some(x => x.t === q.t)) : [];
     mischiefOn = state.msc !== undefined ? !!state.msc : true;
     $('mischiefBtn').textContent = '😈 Mischief: ' + (mischiefOn ? 'ON' : 'OFF');
@@ -1140,7 +1231,8 @@
   document.addEventListener('visibilitychange', () => { // and when leaving the page
     if (document.visibilityState === 'hidden') storageSave();
   });
-  storageLoad(true);
+  // Deferred so every feature section below is initialized before the save applies
+  setTimeout(() => storageLoad(true), 0);
 
   // ---------- Pause ----------
   let paused = false;
@@ -1195,6 +1287,9 @@
     kittyPets = 0; chillCount = 0; meowUsed = false;
     totalPlaySeconds = 0; foodsBought = 0;
     quests = [];  // fresh goals for the fresh start
+    closetOwned = []; worn = null; renderCloset();
+    lastDaily = '';
+    bankBalance = 0;
     endChill();
     ITEMS.forEach(i => { i.owned = 0; i.priceResetAt = 0; });
     unlockedStickers.clear();
@@ -1737,6 +1832,169 @@
   $('statsClose').addEventListener('click', () => statsModal.hidden = true);
   statsModal.addEventListener('click', e => { if (e.target === statsModal) statsModal.hidden = true; });
   setInterval(() => { if (!statsModal.hidden && !paused) renderStats(); }, 1000);  // live while open
+
+  // ---------- 👒 Unicorn Closet ----------
+  const CLOSET = [
+    { id:'bow',    icon:'🎀', name:'Pretty Bow',   cost:2 },
+    { id:'tophat', icon:'🎩', name:'Top Hat',      cost:5 },
+    { id:'sunhat', icon:'👒', name:'Sun Hat',      cost:8 },
+    { id:'scarf',  icon:'🧣', name:'Cozy Scarf',   cost:12, low:true },
+    { id:'shades', icon:'🕶️', name:'Cool Shades',  cost:15 },
+    { id:'grad',   icon:'🎓', name:'Smarty Cap',   cost:20 },
+  ];
+  let closetOwned = [];
+  let worn = null;
+
+  const closetModal = $('closetModal');
+  const closetGrid = $('closetGrid');
+  const closetCells = {};
+  CLOSET.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'sticker closet-item';
+    d.addEventListener('click', () => closetTap(c));
+    closetGrid.appendChild(d);
+    closetCells[c.id] = d;
+  });
+  function closetTap(c) {
+    if (!closetOwned.includes(c.id)) {
+      if (gems < c.cost) { toast('Not enough gems — this needs 💎 ' + c.cost); return; }
+      gems -= c.cost;
+      closetOwned.push(c.id);
+      sfx.buy();
+      toast('New outfit! ' + c.icon + ' ' + c.name);
+      worn = c.id;   // wear it right away
+    } else {
+      worn = (worn === c.id) ? null : c.id;   // tap to wear / tap again to take off
+    }
+    renderCloset(); render(); storageSave();
+  }
+  function renderCloset() {
+    CLOSET.forEach(c => {
+      const cell = closetCells[c.id];
+      const owned = closetOwned.includes(c.id);
+      cell.classList.toggle('wearing', worn === c.id);
+      cell.classList.toggle('cantafford', !owned && gems < c.cost);
+      cell.innerHTML = '<span class="s-icon">' + c.icon + '</span><span class="s-name">' + c.name + '</span>' +
+        '<span class="s-desc">' + (owned ? (worn === c.id ? 'Wearing it!' : 'Tap to wear') : '💎 ' + c.cost) + '</span>';
+    });
+    const wornItem = CLOSET.find(c => c.id === worn);
+    const slot = $('accWorn');
+    slot.hidden = !wornItem;
+    if (wornItem) {
+      slot.textContent = wornItem.icon;
+      slot.classList.toggle('low', !!wornItem.low);
+    }
+  }
+  $('closetBtn').addEventListener('click', () => { menuModal.hidden = true; renderCloset(); closetModal.hidden = false; });
+  $('closetClose').addEventListener('click', () => closetModal.hidden = true);
+  closetModal.addEventListener('click', e => { if (e.target === closetModal) closetModal.hidden = true; });
+
+  // ---------- 🏦 Sparkle Bank ----------
+  let bankBalance = 0;
+  const BANK_RATE_PER_MIN = 0.01;   // 1% per minute, compounding while playing
+  const bankModal = $('bankModal');
+  function renderBank() {
+    $('bankBalance').textContent = fmt(Math.floor(bankBalance));
+    const perMin = bankBalance * BANK_RATE_PER_MIN;
+    $('bankRate').textContent = bankBalance > 0
+      ? 'Growing about +' + fmt(perMin) + ' ✨ every minute'
+      : 'Deposit some sparkles to start growing!';
+  }
+  $('bankBtn').addEventListener('click', () => { menuModal.hidden = true; renderBank(); bankModal.hidden = false; });
+  $('bankClose').addEventListener('click', () => bankModal.hidden = true);
+  bankModal.addEventListener('click', e => { if (e.target === bankModal) bankModal.hidden = true; });
+  $('bankHalf').addEventListener('click', () => {
+    const amt = Math.floor(sparkles / 2);
+    if (amt < 1) { toast('Nothing to deposit yet!'); return; }
+    sparkles -= amt; bankBalance += amt; sfx.buy(); renderBank(); render(); storageSave();
+  });
+  $('bankAll').addEventListener('click', () => {
+    const amt = Math.floor(sparkles);
+    if (amt < 1) { toast('Nothing to deposit yet!'); return; }
+    sparkles -= amt; bankBalance += amt; sfx.buy(); renderBank(); render(); storageSave();
+  });
+  $('bankOut').addEventListener('click', () => {
+    if (bankBalance < 1) { toast('The vault is empty!'); return; }
+    sparkles += bankBalance;
+    toast('🤲 Withdrew ' + fmt(Math.floor(bankBalance)) + ' ✨!');
+    bankBalance = 0;
+    sfx.buy(); renderBank(); render(); storageSave();
+  });
+  // Interest accrues in the main loop (see below); refresh display while open
+  setInterval(() => { if (!bankModal.hidden && !paused) renderBank(); }, 1000);
+
+  // ---------- 🌅 Daily Gift ----------
+  let lastDaily = '';
+  const todayStr = () => {
+    const d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+  };
+  const dailyModal = $('dailyModal');
+  function maybeDailyGift() {
+    if (lastDaily === todayStr()) return;
+    dailyModal.hidden = false;
+  }
+  $('dailyClaim').addEventListener('click', () => {
+    lastDaily = todayStr();
+    const reward = Math.max(2000, Math.floor(totalSps() * 600));  // ~10 minutes of production
+    earn(reward);
+    let msg = '🌅 Daily gift: +' + fmt(reward) + ' ✨';
+    if (Math.random() < 0.2) { gems++; msg += ' …and a bonus 💎!'; }
+    dailyModal.hidden = true;
+    rainbowStorm(40);
+    sfx.fanfare();
+    toast(msg);
+    storageSave();
+    render();
+  });
+  setTimeout(maybeDailyGift, 2500);   // after autoload and the surprise check
+
+  // ---------- 🌦️ Weather & seasons (out the window) ----------
+  const SEASON_WEATHER = {
+    spring: ['🌸','🌦️','☀️','🌈','⛅'],
+    summer: ['☀️','⛅','🌦️','☀️'],
+    fall:   ['🍂','🌧️','⛅','🍂'],
+    winter: ['❄️','🌨️','⛅','❄️'],
+  };
+  const COZY_WEATHER = ['🌧️','🌦️','❄️','🌨️'];   // rain & snow = extra cozy inside!
+  function season() {
+    const m = new Date().getMonth();   // 0-11
+    if (m >= 2 && m <= 4) return 'spring';
+    if (m >= 5 && m <= 7) return 'summer';
+    if (m >= 8 && m <= 10) return 'fall';
+    return 'winter';
+  }
+  let currentWeather = null;
+  const windowOwned = () => DECOR.find(d => d.id === 'window').owned;
+  const weatherMult = () => (windowOwned() && COZY_WEATHER.includes(currentWeather)) ? 1.25 : 1;
+  function changeWeather(announce) {
+    const pool = SEASON_WEATHER[season()];
+    currentWeather = pool[Math.random() * pool.length | 0];
+    $('windowWx').textContent = currentWeather;
+    if (announce && windowOwned()) {
+      toast('Out the window: ' + currentWeather +
+        (COZY_WEATHER.includes(currentWeather) ? ' — cozy weather! +25% sparkles/sec!' : ''));
+    }
+  }
+  changeWeather(false);
+  setInterval(() => { if (!paused) changeWeather(true); }, 300000);  // shifts every ~5 minutes
+
+  // ---------- 🌙 Day/Night cycle (real clock) ----------
+  function dayPhase() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 10) return 'morning';
+    if (h >= 10 && h < 17) return 'day';
+    if (h >= 17 && h < 21) return 'evening';
+    return 'night';
+  }
+  function applyDayPhase() {
+    const p = dayPhase();
+    document.body.classList.remove('time-day','time-evening','time-night');
+    if (p !== 'morning') document.body.classList.add('time-' + p);
+    $('accMoon').hidden = p !== 'night';
+  }
+  applyDayPhase();
+  setInterval(applyDayPhase, 60000);
 
   // ---------- Drifting clouds (don't touch them!) ----------
   const cloudsEl = $('clouds');
