@@ -446,6 +446,31 @@
   }
   .stk-pager .pill-btn:disabled { opacity:.4; cursor:default; }
 
+  .qr-box {
+    display:flex; justify-content:center; align-items:center;
+    background:#fff; border-radius:14px; padding:14px; margin:10px auto;
+    width:fit-content; box-shadow:inset 0 0 0 2px #eee2f6;
+  }
+  .qr-box canvas, .qr-box img { display:block; }
+  .qr-video {
+    width:100%; max-height:280px; border-radius:14px; background:#000;
+    object-fit:cover; margin:8px 0;
+  }
+
+  .beam-code {
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:2.2rem;
+    letter-spacing:.35em; text-align:center; color:var(--ink);
+    background:#faf5ff; border:2px dashed var(--lav); border-radius:14px;
+    padding:10px 4px 10px 14px; margin:10px 0; user-select:all; -webkit-user-select:all;
+  }
+  .beam-input {
+    width:100%; font-family:'Fredoka',sans-serif; font-weight:700; font-size:1.5rem;
+    letter-spacing:.3em; text-align:center; text-transform:uppercase;
+    color:var(--ink); background:#faf5ff;
+    border:2px solid #eee2f6; border-radius:14px; padding:10px;
+  }
+  .beam-input:focus-visible { outline:3px dashed var(--aqua); }
+
   .toast {
     position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
     z-index:30; background:var(--ink); color:#fff;
@@ -513,7 +538,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v5.9</p>
+  <p class="version-tag">v6.3</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -590,6 +615,12 @@
       <button class="pill-btn wide" id="bankBtn">🏦 Sparkle Bank</button>
       <button class="pill-btn wide" id="saveBtn">💾 Save</button>
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
+      <button class="pill-btn wide" id="exportBtn">📤 Save to file</button>
+      <button class="pill-btn wide" id="importBtn">📥 Load from file</button>
+      <button class="pill-btn wide" id="beamSendBtn">📡 Send with a code</button>
+      <button class="pill-btn wide" id="beamRecvBtn">📡 Receive with a code</button>
+      <button class="pill-btn wide" id="qrShowBtn">📷 Show save as QR</button>
+      <button class="pill-btn wide" id="qrScanBtn">📷 Scan a save QR</button>
       <button class="pill-btn wide" id="soundBtn">🔊 Sounds: ON</button>
       <button class="pill-btn wide" id="updateBtn">🔄 Check for updates</button>
       <button class="pill-btn wide" id="devBtn">🛠️ Dev Menu</button>
@@ -664,6 +695,51 @@
     </div>
   </div>
 </div>
+<div class="modal-back" id="qrShowModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <h3 class="pause-title">📷 Scan me!</h3>
+    <div class="qr-box" id="qrBox"></div>
+    <p class="modal-sub" style="text-align:center;">On the other device: Menu → Scan a save QR, and point the camera at this screen.</p>
+    <button class="pill-btn wide" id="qrShowClose">Done</button>
+  </div>
+</div>
+<div class="modal-back" id="qrScanModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <h3 class="pause-title">📷 Scanning…</h3>
+    <video id="qrVideo" class="qr-video" playsinline muted></video>
+    <p class="modal-sub" style="text-align:center;">Point the camera at the QR code on the other device.<br><b>This replaces the progress on this device!</b></p>
+    <button class="pill-btn wide" id="qrScanClose">Cancel</button>
+  </div>
+</div>
+<div class="modal-back" id="beamSendModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <div class="pause-big">📡</div>
+    <h3 class="pause-title">Your transfer code</h3>
+    <p class="beam-code" id="beamCode">······</p>
+    <p class="modal-sub" style="text-align:center;">On the other device: Menu → Receive with a code, and type this in.<br>The code works once and expires in 15 minutes.</p>
+    <button class="pill-btn wide" id="beamSendClose">Done</button>
+  </div>
+</div>
+<div class="modal-back" id="beamRecvModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <div class="pause-big">📡</div>
+    <h3 class="pause-title">Receive a save</h3>
+    <p class="modal-sub" style="text-align:center;">Type the code from the other device.<br><b>This replaces the progress on this device!</b></p>
+    <input type="text" class="beam-input" id="beamInput" maxlength="6" autocomplete="off" placeholder="ABC123">
+    <div class="menu-list" style="margin-top:10px;">
+      <button class="pill-btn wide rainbow" id="beamRecvGo">📥 Get my save</button>
+      <button class="pill-btn wide" id="beamRecvClose">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="modal-back" id="offlineModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <div class="pause-big">😴</div>
+    <h3 class="pause-title">Welcome back!</h3>
+    <p class="modal-sub" style="text-align:center;" id="offlineDesc"></p>
+    <button class="pill-btn wide rainbow" id="offlineOk">✨ Awesome!</button>
+  </div>
+</div>
 <div class="modal-back" id="bankModal" hidden>
   <div class="modal menu-modal">
     <div class="modal-head"><h3>🏦 Sparkle Bank</h3><button class="modal-close" id="bankClose" aria-label="Close">✕</button></div>
@@ -698,6 +774,7 @@
     <div class="stats-list" id="statsList"></div>
   </div>
 </div>
+<input type="file" id="importFile" accept=".txt,.ucsave,.json" style="display:none">
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -1033,6 +1110,7 @@
       wr: worn,
       dg: lastDaily,
       bk: Math.floor(bankBalance),
+      ts: Date.now(),
     };
     return btoa(JSON.stringify(state));
   }
@@ -1077,6 +1155,7 @@
     renderDecor();
     renderStickers();
     render();
+    return state;
   }
 
   $('saveBtn').addEventListener('click', () => {
@@ -1088,6 +1167,41 @@
     if (result === 'loaded') toast('Save loaded! 🦄');
     else if (result === 'empty') toast('No save found yet — tap Save first!');
     else toast("Couldn't load here — loading works when the game runs in a browser");
+  });
+
+  // ---------- 📤📥 Save files (move progress between devices) ----------
+  $('exportBtn').addEventListener('click', () => {
+    const d = new Date();
+    const stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const blob = new Blob([makeSave()], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'unicorn-couch-save-' + stamp + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    menuModal.hidden = true;
+    toast('📤 Save file downloaded — keep it somewhere safe!');
+  });
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', () => {
+    const f = $('importFile').files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        applySave(reader.result.trim());
+        storageSave();
+        menuModal.hidden = true;
+        toast('📥 Save loaded from file — welcome back! 🦄');
+      } catch {
+        toast("Hmm, that file doesn't look like a Unicorn Couch save 😕");
+      }
+      $('importFile').value = '';
+    };
+    reader.onerror = () => toast("Couldn't read that file 😕");
+    reader.readAsText(f);
   });
 
   // ---------- Growing Unicorn ----------
@@ -1222,8 +1336,9 @@
     try {
       const code = localStorage.getItem(SAVE_KEY);
       if (!code) return 'empty';
-      applySave(code);
-      if (isAutoload) toast('Welcome back! 🦄');
+      const state = applySave(code);
+      if (isAutoload) handleOfflineIncome(state);
+      else toast('Save loaded! 🦄');
       return 'loaded';
     } catch { return 'blocked'; }
   }
@@ -1888,6 +2003,167 @@
   $('closetBtn').addEventListener('click', () => { menuModal.hidden = true; renderCloset(); closetModal.hidden = false; });
   $('closetClose').addEventListener('click', () => closetModal.hidden = true);
   closetModal.addEventListener('click', e => { if (e.target === closetModal) closetModal.hidden = true; });
+
+  // ---------- 📷 QR save transfer (no server needed!) ----------
+  function loadScript(url) {
+    return new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = url; sc.onload = res; sc.onerror = rej;
+      document.head.appendChild(sc);
+    });
+  }
+  let qrLibs = { make: false, read: false };
+
+  $('qrShowBtn').addEventListener('click', async () => {
+    menuModal.hidden = true;
+    const code = makeSave();
+    if (code.length > 2500) { toast('Save is too big for a QR — use Save to file instead!'); return; }
+    try {
+      if (!qrLibs.make) {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js');
+        qrLibs.make = true;
+      }
+      $('qrBox').innerHTML = '';
+      new QRCode($('qrBox'), { text: code, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.L });
+      $('qrShowModal').hidden = false;
+    } catch {
+      toast("Couldn't load the QR maker — check the internet connection 😕");
+    }
+  });
+  $('qrShowClose').addEventListener('click', () => $('qrShowModal').hidden = true);
+  $('qrShowModal').addEventListener('click', e => { if (e.target === $('qrShowModal')) $('qrShowModal').hidden = true; });
+
+  let qrStream = null, qrScanRAF = null;
+  function stopScan() {
+    if (qrScanRAF) cancelAnimationFrame(qrScanRAF);
+    if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+    $('qrScanModal').hidden = true;
+  }
+  $('qrScanBtn').addEventListener('click', async () => {
+    menuModal.hidden = true;
+    try {
+      if (!qrLibs.read) {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js');
+        qrLibs.read = true;
+      }
+      qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = $('qrVideo');
+      video.srcObject = qrStream;
+      await video.play();
+      $('qrScanModal').hidden = false;
+      const cv = document.createElement('canvas');
+      const cx = cv.getContext('2d', { willReadFrequently: true });
+      const tick = () => {
+        if (!qrStream) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          cv.width = video.videoWidth; cv.height = video.videoHeight;
+          cx.drawImage(video, 0, 0);
+          const img = cx.getImageData(0, 0, cv.width, cv.height);
+          const found = jsQR(img.data, img.width, img.height);
+          if (found && found.data) {
+            try {
+              applySave(found.data);
+              storageSave();
+              stopScan();
+              rainbowStorm(40);
+              toast('📷 Save transferred — welcome to this device! 🦄');
+              return;
+            } catch { /* not our QR — keep scanning */ }
+          }
+        }
+        qrScanRAF = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch (err) {
+      stopScan();
+      toast(err && err.name === 'NotAllowedError'
+        ? 'Camera permission was denied — allow it in the browser settings and try again.'
+        : "Couldn't start the camera 😕 You can use Save to file instead.");
+    }
+  });
+  $('qrScanClose').addEventListener('click', stopScan);
+  $('qrScanModal').addEventListener('click', e => { if (e.target === $('qrScanModal')) stopScan(); });
+
+  // ---------- 📡 Code transfer (via your Apps Script relay) ----------
+  // Deploy unicorn-couch-relay.gs as a web app and paste its /exec URL here:
+  const RELAY_URL = '';
+  const relayReady = () => RELAY_URL.startsWith('https://');
+
+  $('beamSendBtn').addEventListener('click', async () => {
+    if (!relayReady()) { toast('Transfer relay not set up yet — see unicorn-couch-relay.gs'); return; }
+    menuModal.hidden = true;
+    toast('📡 Sending your save…');
+    try {
+      const res = await fetch(RELAY_URL, { method:'POST', body: makeSave() });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'relay error');
+      $('beamCode').textContent = data.code;
+      $('beamSendModal').hidden = false;
+    } catch {
+      toast("Couldn't reach the transfer relay 😕 Check your connection.");
+    }
+  });
+  $('beamSendClose').addEventListener('click', () => $('beamSendModal').hidden = true);
+  $('beamSendModal').addEventListener('click', e => { if (e.target === $('beamSendModal')) $('beamSendModal').hidden = true; });
+
+  $('beamRecvBtn').addEventListener('click', () => {
+    if (!relayReady()) { toast('Transfer relay not set up yet — see unicorn-couch-relay.gs'); return; }
+    menuModal.hidden = true;
+    $('beamInput').value = '';
+    $('beamRecvModal').hidden = false;
+    $('beamInput').focus();
+  });
+  $('beamRecvClose').addEventListener('click', () => $('beamRecvModal').hidden = true);
+  $('beamRecvModal').addEventListener('click', e => { if (e.target === $('beamRecvModal')) $('beamRecvModal').hidden = true; });
+  $('beamRecvGo').addEventListener('click', async () => {
+    const code = $('beamInput').value.trim().toUpperCase();
+    if (code.length < 4) { toast('Type the whole code first!'); return; }
+    toast('📡 Looking for your save…');
+    try {
+      const res = await fetch(RELAY_URL + '?code=' + encodeURIComponent(code));
+      const data = await res.json();
+      if (!data.ok) { toast(data.error === 'Code not found or expired' ? "That code isn't valid anymore — send a fresh one!" : 'Relay error 😕'); return; }
+      applySave(data.save);
+      storageSave();
+      $('beamRecvModal').hidden = true;
+      rainbowStorm(40);
+      toast('📡 Save transferred — welcome to this device! 🦄');
+    } catch {
+      toast("Couldn't reach the transfer relay 😕 Check your connection.");
+    }
+  });
+
+  // ---------- 😴 Offline income ----------
+  const OFFLINE_EFFICIENCY = 0.5;          // foods work at half speed while she's away
+  const OFFLINE_CAP_SECONDS = 8 * 3600;    // up to 8 hours counts
+  const OFFLINE_BANK_CAP_MIN = 60;         // bank compounds up to 1 hour offline
+  function handleOfflineIncome(state) {
+    if (!state || !state.ts) { toast('Welcome back! 🦄'); return; }
+    const away = Math.min(OFFLINE_CAP_SECONDS, (Date.now() - state.ts) / 1000);
+    if (away < 60) { toast('Welcome back! 🦄'); return; }   // short hops don't count
+    const baseSps = ITEMS.reduce((s, i) => s + i.sps * i.owned, 0) * gemMult();
+    const gained = Math.floor(baseSps * away * OFFLINE_EFFICIENCY);
+    let bankGained = 0;
+    if (bankBalance > 0) {
+      const mins = Math.min(OFFLINE_BANK_CAP_MIN, away / 60);
+      const grown = bankBalance * Math.pow(1 + BANK_RATE_PER_MIN, mins);
+      bankGained = Math.floor(grown - bankBalance);
+      bankBalance = grown;
+      lifetimeEarned += bankGained;
+    }
+    if (gained <= 0 && bankGained <= 0) { toast('Welcome back! 🦄'); return; }
+    if (gained > 0) earn(gained);
+    const h = Math.floor(away/3600), m = Math.floor(away%3600/60);
+    let msg = 'You were away for ' + (h ? h + 'h ' : '') + m + 'm — and your foods kept cooking at half speed!<br><br>' +
+              '<b>+' + fmt(gained) + ' ✨</b>';
+    if (bankGained > 0) msg += '<br>…and the bank grew by <b>+' + fmt(bankGained) + ' ✨</b> 🏦';
+    $('offlineDesc').innerHTML = msg;
+    $('offlineModal').hidden = false;
+    render();
+    storageSave();
+  }
+  $('offlineOk').addEventListener('click', () => $('offlineModal').hidden = true);
+  $('offlineModal').addEventListener('click', e => { if (e.target === $('offlineModal')) $('offlineModal').hidden = true; });
 
   // ---------- 🏦 Sparkle Bank ----------
   let bankBalance = 0;
