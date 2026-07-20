@@ -39,6 +39,15 @@
   }
   .clouds span.gulp { animation: gulp .5s ease; }
   @keyframes gulp { 40% { transform:scale(1.6); opacity:1; } 100% { transform:scale(1); } }
+  .clouds .cface {
+    position:absolute; left:50%; top:52%; transform:translate(-50%,-50%);
+    font-size:.45em; opacity:0; transition:opacity .3s ease;
+    pointer-events:none;
+  }
+  .clouds span { position:absolute; }
+  .clouds span.tease { animation: drift linear infinite, wiggle .4s ease-in-out 4; }
+  .clouds span.tease .cface { opacity:1; }
+  @keyframes wiggle { 0%,100%{rotate:0deg} 25%{rotate:-8deg} 75%{rotate:8deg} }
   @keyframes drift {
     from { transform: translateX(-15vw); }
     to   { transform: translateX(115vw); }
@@ -113,7 +122,7 @@
   #accCoffee { bottom:6%; left:-10%; animation-delay:.4s; }
   #accTeddy  { bottom:4%; right:-10%; animation-delay:.8s; }
   #accCat    { top:38%;  right:-18%; animation-delay:1.2s; }
-  #accCrown  { top:-12%; left:50%; transform:translateX(-50%); animation:none; }
+  #accCrown { top:-12%; left:50%; transform:translateX(-50%); animation:none; padding:14px; margin:-14px; }
   .stage-label {
     font-family:'Fredoka',sans-serif; font-weight:600; font-size:.9rem;
     color:var(--lav); margin-top:2px;
@@ -314,6 +323,24 @@
   .kitty.flip .kitty-face { transform: scaleX(-1); }
   .kitty:focus-visible { outline:3px dashed var(--aqua); outline-offset:2px; border-radius:12px; }
 
+  .sneaky {
+    position:fixed; z-index:15; left:var(--from, -15vw);
+    font-size:2.6rem; padding:10px;
+    background:none; border:none; cursor:pointer;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
+    animation: sneakRun 8s linear forwards, sneakBounce .5s ease-in-out infinite;
+  }
+  @keyframes sneakRun { to { left:var(--to, 110vw); } }
+  @keyframes sneakBounce { 0%,100%{margin-top:0} 50%{margin-top:-8px} }
+  .sneaky .sneaky-body { display:inline-block; }
+  .sneaky.flip .sneaky-body { transform:scaleX(-1); }
+  .sneaky .loot {
+    position:absolute; top:-8px; right:-4px; font-size:1.3rem;
+    animation: wiggle .5s ease-in-out infinite;
+  }
+  .sneaky:focus-visible { outline:3px dashed var(--aqua); outline-offset:2px; border-radius:12px; }
+  body.paused .sneaky { animation-play-state: paused !important; }
+
   .modal-back {
     position:fixed; inset:0; z-index:20;
     background:rgba(74,53,96,.35);
@@ -345,6 +372,34 @@
   .sticker.locked { opacity:.55; }
   .sticker.locked .s-icon { filter:grayscale(1); }
   .sticker.unlocked { border-color:var(--sun-bright); background:#fff9ec; box-shadow:0 0 12px rgba(255,179,71,.25); }
+
+  .quests { display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
+  .quest {
+    background:var(--panel); border:2px solid #eee2f6; border-radius:16px;
+    padding:10px 12px; box-shadow:0 3px 10px rgba(74,53,96,.08);
+  }
+  .quest .q-top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .quest .q-desc { font-weight:800; font-size:.85rem; }
+  .quest .q-reward { font-family:'Fredoka',sans-serif; font-weight:600; font-size:.8rem; color:var(--sun); white-space:nowrap; }
+  .quest .q-bar { height:8px; border-radius:99px; background:#f1eaf9; margin-top:6px; overflow:hidden; }
+  .quest .q-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--aqua),var(--lav)); transition:width .2s ease; }
+  .quest .q-prog { font-size:.7rem; color:var(--dim); margin-top:3px; }
+
+  .stats-list { display:flex; flex-direction:column; gap:2px; }
+  .stat-row {
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding:7px 10px; border-radius:10px; font-size:.85rem;
+  }
+  .stat-row:nth-child(odd) { background:#faf5ff; }
+  .stat-row .st-name { color:var(--dim); font-weight:800; }
+  .stat-row .st-val { font-family:'Fredoka',sans-serif; font-weight:600; color:var(--ink); white-space:nowrap; }
+
+  .stk-pager {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:10px; font-family:'Fredoka',sans-serif; font-weight:600;
+    font-size:.8rem; color:var(--lav);
+  }
+  .stk-pager .pill-btn:disabled { opacity:.4; cursor:default; }
 
   .toast {
     position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
@@ -413,7 +468,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v4.5</p>
+  <p class="version-tag">v5.4</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -454,6 +509,10 @@
 
   <button class="pill-btn rainbow wide" id="rebirthBtn" hidden>🌈 Rainbow Rebirth</button>
 
+  <h2>Quests</h2>
+  <p class="section-sub">Little goals, little rewards — they refresh when done! 📜</p>
+  <div class="quests" id="questList"></div>
+
   <h2>Breakfast Table</h2>
   <div class="shop" id="shop"></div>
 
@@ -479,8 +538,10 @@
     <div class="modal-head"><h3>☰ Menu</h3><button class="modal-close" id="menuClose" aria-label="Close">✕</button></div>
     <div class="menu-list">
       <button class="pill-btn wide" id="stickerBtn">🎟️ Sticker Book</button>
+      <button class="pill-btn wide" id="statsBtn">📊 Statistics</button>
       <button class="pill-btn wide" id="saveBtn">💾 Save</button>
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
+      <button class="pill-btn wide" id="soundBtn">🔊 Sounds: ON</button>
       <button class="pill-btn wide" id="updateBtn">🔄 Check for updates</button>
       <button class="pill-btn wide" id="devBtn">🛠️ Dev Menu</button>
       <button class="pill-btn wide danger" id="resetBtn">🔄 Reset All</button>
@@ -493,6 +554,11 @@
     <div class="modal-head"><h3>🎟️ Sticker Book</h3><button class="modal-close" id="stickerClose" aria-label="Close">✕</button></div>
     <p class="modal-sub" id="stickerCount"></p>
     <div class="sticker-grid" id="stickerGrid"></div>
+    <div class="stk-pager">
+      <button class="pill-btn" id="stkPrev">◀</button>
+      <span id="stkPageLabel"></span>
+      <button class="pill-btn" id="stkNext">▶</button>
+    </div>
   </div>
 </div>
 <div class="modal-back" id="devModal" hidden>
@@ -512,6 +578,8 @@
         </div>
       </div>
       <button class="pill-btn wide" id="kittyBtn">🐈 Crazy Kitty Mode 🐈</button>
+      <button class="pill-btn wide" id="mischiefBtn">😈 Mischief: ON</button>
+      <button class="pill-btn wide" id="summonSneakyBtn">🐈‍⬛ Summon sneaky kitty</button>
       <button class="pill-btn wide" id="priceResetBtn">💸 Reset all prices</button>
       <button class="pill-btn wide" id="replayGiftBtn">🎁 Replay the surprise</button>
     </div>
@@ -547,6 +615,12 @@
     </div>
   </div>
 </div>
+<div class="modal-back" id="statsModal" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>📊 Statistics</h3><button class="modal-close" id="statsClose" aria-label="Close">✕</button></div>
+    <div class="stats-list" id="statsList"></div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -560,6 +634,11 @@
   let gems = 0;             // Rainbow Gems — each is +10% to everything, permanently
   let rebirths = 0;
   let giftOpened = false;
+  let kittyPets = 0;      // crazy kitty catches
+  let chillCount = 0;     // super chill activations
+  let meowUsed = false;   // the secret was found
+  let totalPlaySeconds = 0;  // lifetime, persisted
+  let foodsBought = 0;       // lifetime purchases, persisted
   let giftGemsGiven = false;  // the 3 free gems only come once, even if the surprise replays
 
   const gemMult = () => 1 + gems * 0.1;
@@ -620,7 +699,9 @@
     sparkles -= c;
     it.owned++;
     if (it.clickMult) clickPower *= it.clickMult;
+    foodsBought++;
     burst(btn.getBoundingClientRect(), 6);
+    sfx.buy();
     render();
   }
 
@@ -637,6 +718,7 @@
     const y = e.clientY || uni.getBoundingClientRect().top;
     floatNum('+' + fmt(gain) + ' ✨', x, y);
     sparkleBurst(x, y);
+    sfx.pop();
 
     if (chillEnabled && !chillMode && chillClicksNeeded > 0) {
       meter = Math.min(100, meter + 100 / chillClicksNeeded);
@@ -646,6 +728,7 @@
   });
 
   function startChill() {
+    chillCount++;
     chillMode = true;
     chillTimeLeft = 12;
     document.body.classList.add('chill-mode');
@@ -710,6 +793,8 @@
   // ---------- Loops ----------
   setInterval(() => {
     if (paused) return;   // pause freezes production, meters, and checks
+    sessionSeconds += 0.1;
+    totalPlaySeconds += 0.1;
     const gain = totalSps() / 10;
     earn(gain);
     if (chillMode) {
@@ -750,6 +835,23 @@
     { id:'reborn',   icon:'🌈', name:'Reborn in Rainbows', desc:'Do your first Rainbow Rebirth', cond:() => rebirths >= 1 },
     { id:'gem10',    icon:'💎', name:'Gem Collector',      desc:'Hold 10 Rainbow Gems',       cond:() => gems >= 10 },
     { id:'house',    icon:'🏠', name:'Full House',         desc:'Own every decoration',       cond:() => DECOR.every(d => d.owned) },
+    { id:'survivor', icon:'⛅', name:'Cloud Survivor',     desc:'Play 5 minutes without touching a single cloud', cond:() => sessionSeconds >= 300 && sessionCloudTouches === 0 },
+    { id:'rescue',   icon:'🐈‍⬛', name:'Snack Rescuer',      desc:'Catch a sneaky kitty and save your snack', cond:() => snacksRescued >= 1 },
+    { id:'tap100k',  icon:'🌪️', name:'Tap Tornado',        desc:'Tap the unicorn 100,000 times', cond:() => totalTaps >= 100000 },
+    { id:'billion',  icon:'🎆', name:'Billionaire',        desc:'Earn 1 billion lifetime sparkles', cond:() => lifetimeEarned >= 1e9 },
+    { id:'trillion', icon:'👑', name:'Trillionaire',       desc:'Earn 1 trillion lifetime sparkles', cond:() => lifetimeEarned >= 1e12 },
+    { id:'bfly10',   icon:'🌺', name:'Butterfly Garden',   desc:'Catch 10 golden butterflies', cond:() => butterfliesCaught >= 10 },
+    { id:'rescue10', icon:'🛡️', name:'Guardian of Snacks', desc:'Rescue 10 snacks from the sneaky kitty', cond:() => snacksRescued >= 10 },
+    { id:'reb5',     icon:'🎠', name:'Rainbow Regular',    desc:'Do 5 Rainbow Rebirths', cond:() => rebirths >= 5 },
+    { id:'gem100',   icon:'💰', name:'Gem Hoarder',        desc:'Hold 100 Rainbow Gems', cond:() => gems >= 100 },
+    { id:'own100',   icon:'🍽️', name:'Century Snacker',    desc:'Own 100 foods at once', cond:() => ITEMS.reduce((s,i)=>s+i.owned,0) >= 100 },
+    { id:'own500',   icon:'🎪', name:'Feast Master',       desc:'Own 500 foods at once', cond:() => ITEMS.reduce((s,i)=>s+i.owned,0) >= 500 },
+    { id:'chill1',   icon:'🧊', name:'So Chill',           desc:'Reach maximum chill', cond:() => chillCount >= 1 },
+    { id:'kitty25',  icon:'🐾', name:'Kitty Whisperer',    desc:'Catch the crazy kitty 25 times', cond:() => kittyPets >= 25 },
+    { id:'marathon', icon:'⏰', name:'Couch Marathon',     desc:'Play for 30 minutes in one sitting', cond:() => sessionSeconds >= 1800 },
+    { id:'meow',     icon:'🐱', name:'MEOW?!',             desc:'You found the royal secret…', secret:true, cond:() => meowUsed },
+    { id:'cloudfan', icon:'🌩️', name:'Cloud Snack',        desc:'Feed the clouds 5 times in one sitting. Why?!', secret:true, cond:() => sessionCloudTouches >= 5 },
+    { id:'gift',     icon:'🎀', name:'Gift Opener',        desc:'You opened the surprise!', secret:true, cond:() => giftOpened },
   ];
   const unlockedStickers = new Set();
 
@@ -774,6 +876,7 @@
       if (!unlockedStickers.has(s.id) && s.cond()) {
         unlockedStickers.add(s.id);
         toast('Sticker earned! ' + s.icon + ' ' + s.name);
+        sfx.sticker();
         renderStickers();
       }
     });
@@ -781,21 +884,37 @@
 
   const stickerModal = $('stickerModal');
   const stickerGrid = $('stickerGrid');
+  const STICKERS_PER_PAGE = 9;
+  let stickerPage = 0;
   const stickerCells = {};
   STICKERS.forEach(s => {
     const d = document.createElement('div');
     d.className = 'sticker locked';
-    d.innerHTML = `<span class="s-icon">${s.icon}</span><span class="s-name">${s.name}</span><span class="s-desc">${s.desc}</span>`;
     stickerGrid.appendChild(d);
     stickerCells[s.id] = d;
   });
   function renderStickers() {
-    STICKERS.forEach(s => {
+    const pages = Math.ceil(STICKERS.length / STICKERS_PER_PAGE);
+    stickerPage = Math.max(0, Math.min(stickerPage, pages - 1));
+    STICKERS.forEach((s, i) => {
+      const cell = stickerCells[s.id];
+      const onPage = Math.floor(i / STICKERS_PER_PAGE) === stickerPage;
+      cell.style.display = onPage ? '' : 'none';
       const un = unlockedStickers.has(s.id);
-      stickerCells[s.id].className = 'sticker ' + (un ? 'unlocked' : 'locked');
+      cell.className = 'sticker ' + (un ? 'unlocked' : 'locked');
+      if (!un && s.secret) {
+        cell.innerHTML = `<span class="s-icon">❓</span><span class="s-name">???</span><span class="s-desc">Secret sticker — keep playing!</span>`;
+      } else {
+        cell.innerHTML = `<span class="s-icon">${s.icon}</span><span class="s-name">${s.name}</span><span class="s-desc">${s.desc}</span>`;
+      }
     });
     $('stickerCount').textContent = unlockedStickers.size + ' of ' + STICKERS.length + ' stickers collected';
+    $('stkPageLabel').textContent = 'Page ' + (stickerPage + 1) + ' of ' + pages;
+    $('stkPrev').disabled = stickerPage === 0;
+    $('stkNext').disabled = stickerPage >= pages - 1;
   }
+  $('stkPrev').addEventListener('click', () => { stickerPage--; renderStickers(); });
+  $('stkNext').addEventListener('click', () => { stickerPage++; renderStickers(); });
   $('stickerBtn').addEventListener('click', () => { $('menuModal').hidden = true; renderStickers(); stickerModal.hidden = false; });
   $('stickerClose').addEventListener('click', () => stickerModal.hidden = true);
   stickerModal.addEventListener('click', e => { if (e.target === stickerModal) stickerModal.hidden = true; });
@@ -819,6 +938,15 @@
       st: [...unlockedStickers],
       dec: DECOR.filter(d => d.owned).map(d => d.id),
       bf: butterfliesCaught,
+      sk: snacksRescued,
+      snd: soundOn,
+      msc: mischiefOn,
+      kp: kittyPets,
+      cc: chillCount,
+      mw: meowUsed,
+      pt: Math.floor(totalPlaySeconds),
+      fb: foodsBought,
+      q: quests,
     };
     return btoa(JSON.stringify(state));
   }
@@ -843,6 +971,18 @@
     (state.st || []).forEach(id => unlockedStickers.add(id));
     DECOR.forEach(d => { d.owned = (state.dec || []).includes(d.id); });
     butterfliesCaught = state.bf || 0;
+    snacksRescued = state.sk || 0;
+    soundOn = state.snd !== undefined ? !!state.snd : true;
+    $('soundBtn').textContent = '🔊 Sounds: ' + (soundOn ? 'ON' : 'OFF');
+    kittyPets = state.kp || 0;
+    chillCount = state.cc || 0;
+    meowUsed = !!state.mw;
+    totalPlaySeconds = state.pt || 0;
+    foodsBought = state.fb || 0;
+    quests = Array.isArray(state.q) ? state.q.filter(q => q && QUEST_TYPES.some(x => x.t === q.t)) : [];
+    mischiefOn = state.msc !== undefined ? !!state.msc : true;
+    $('mischiefBtn').textContent = '😈 Mischief: ' + (mischiefOn ? 'ON' : 'OFF');
+    $('mischiefBtn').classList.toggle('on', mischiefOn);
     renderDecor();
     renderStickers();
     render();
@@ -921,6 +1061,7 @@
     sparkles -= d.cost;
     d.owned = true;
     burst(btn.getBoundingClientRect(), 6);
+    sfx.buy();
     toast('New decoration! ' + d.icon + ' ' + d.name);
     renderDecor();
     render();
@@ -1051,6 +1192,9 @@
     sparkles = 0; totalEarned = 0; lifetimeEarned = 0; totalTaps = 0; clickPower = 1;
     gems = 0; rebirths = 0; rebirthBaseline = 0;
     giftOpened = false; giftGemsGiven = false;  // the present comes back on a full reset
+    kittyPets = 0; chillCount = 0; meowUsed = false;
+    totalPlaySeconds = 0; foodsBought = 0;
+    quests = [];  // fresh goals for the fresh start
     endChill();
     ITEMS.forEach(i => { i.owned = 0; i.priceResetAt = 0; });
     unlockedStickers.clear();
@@ -1114,6 +1258,21 @@
     renderRebirth();
   });
 
+  // Dev: mischief master switch + manual sneaky kitty
+  const mischiefBtn = $('mischiefBtn');
+  mischiefBtn.classList.add('on');
+  mischiefBtn.addEventListener('click', () => {
+    mischiefOn = !mischiefOn;
+    mischiefBtn.textContent = '😈 Mischief: ' + (mischiefOn ? 'ON' : 'OFF');
+    mischiefBtn.classList.toggle('on', mischiefOn);
+    toast(mischiefOn ? '😈 Mischief is back — watch the clouds!' : '😇 All mischief off. Peaceful couch.');
+    storageSave();
+  });
+  $('summonSneakyBtn').addEventListener('click', () => {
+    document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
+    if (!doSneaky()) toast('The sneaky kitty peeked in… but there are no snacks to steal! Buy a food first.');
+  });
+
   const kittyBtn = $('kittyBtn');
   let kittyEl = null;
   let kittyMoveTimer = null;
@@ -1171,6 +1330,7 @@
     kittyEl.setAttribute('aria-label', 'Crazy kitty! Tap it for bonus sparkles');
     kittyEl.addEventListener('click', petKitty);
     document.body.appendChild(kittyEl);
+    sfx.meow();
     dashKitty();
     kittyMoveTimer = setInterval(dashKitty, 1150);
   }
@@ -1197,6 +1357,8 @@
     kittyEl.classList.toggle('flip', newX > curX);
   }
   function petKitty(e) {
+    kittyPets++;
+    sfx.meow();
     // Every catch rewards — catching the darting kitty is the challenge!
     const bonus = Math.max(10, clickPower * 5, Math.floor(totalSps() * 2));
     earn(bonus);
@@ -1267,6 +1429,12 @@
     showUpdateChip();       // manual check ignores dismissal — you asked!
     toast('New version found! 🌟');
   }
+  $('soundBtn').addEventListener('click', () => {
+    soundOn = !soundOn;
+    $('soundBtn').textContent = '🔊 Sounds: ' + (soundOn ? 'ON' : 'OFF');
+    if (soundOn) sfx.pop();
+    storageSave();
+  });
   $('updateBtn').addEventListener('click', () => { menuModal.hidden = true; manualUpdateCheck(); });
 
   // Kick off the auto-checker after boot (delayed so it doesn't slow page load)
@@ -1300,6 +1468,7 @@
     endChill();
     rebirthModal.hidden = true;
     rainbowStorm(90);
+    sfx.fanfare();
     toast('🌈 REBORN! +' + gained + ' Rainbow Gems 💎');
     storageSave();
     render();
@@ -1350,6 +1519,7 @@
       if (!giftGemsGiven) { gems += 3; giftGemsGiven = true; }  // 3 free gems — first open only
       gift.remove();
       rainbowStorm(90);
+      sfx.fanfare();
       surpriseModal.hidden = false;
       storageSave();
       render();
@@ -1366,9 +1536,215 @@
     toast('🎁 The present is back — and read it this time! 😉');
   });
 
+  // ---------- 🐈‍⬛ Sneaky Kitty (snack thief!) ----------
+  let snacksRescued = 0;
+  let mischiefOn = true;   // master switch for sneaky kitty + cloud trouble
+  function scheduleSneaky() {
+    setTimeout(spawnSneaky, 120000 + Math.random() * 120000);  // every 2–4 minutes
+  }
+  function spawnSneaky() {
+    if (paused || !mischiefOn || !doSneaky()) { setTimeout(spawnSneaky, 20000); return; }
+    scheduleSneaky();
+  }
+  function doSneaky() {
+    const victims = ITEMS.filter(i => i.owned > 0 && i.sps > 0);
+    if (victims.length === 0) return false;
+    const victim = victims[Math.random() * victims.length | 0];
+    victim.owned--;                       // the thief grabs it right away!
+    const goRight = Math.random() < 0.5;
+    const thief = document.createElement('button');
+    thief.className = 'sneaky' + (goRight ? ' flip' : '');
+    thief.innerHTML = '<span class="sneaky-body">🐈‍⬛</span><span class="loot">' + victim.icon + '</span>';
+    thief.setAttribute('aria-label', 'A sneaky kitty stole your ' + victim.name + '! Tap to get it back');
+    thief.style.top = (55 + Math.random() * 25) + 'vh';
+    thief.style.setProperty('--from', goRight ? '-15vw' : '110vw');
+    thief.style.setProperty('--to', goRight ? '110vw' : '-15vw');
+    toast('🐈‍⬛ A sneaky kitty grabbed your ' + victim.name + '! Catch it!');
+    sfx.meow();
+    let caught = false;
+    thief.addEventListener('click', e => {
+      if (caught) return;
+      caught = true;
+      victim.owned++;                     // snack rescued!
+      snacksRescued++;
+      const bonus = Math.max(50, Math.floor(totalSps() * 20));
+      earn(bonus);
+      floatNum(victim.icon + ' rescued! +' + fmt(bonus) + ' ✨', e.clientX, e.clientY);
+      sparkleBurst(e.clientX, e.clientY);
+      toast('You got your ' + victim.name + ' back — plus a reward! 🎉');
+      thief.remove();
+      render();
+    });
+    document.body.appendChild(thief);
+    setTimeout(() => {
+      if (!caught) {
+        thief.remove();
+        toast('🐈‍⬛ The sneaky kitty got away with your ' + victim.name + '… 😿');
+        render();
+      }
+    }, 8000);
+    return true;
+  }
+  scheduleSneaky();
+
+  // ---------- 👑 Secret: tap the crown 5 times… ----------
+  let meowMode = false;
+  let crownTaps = 0;
+  let crownTapTimer = null;
+  const CAT_EMOJI = ['🐱','😺','😸','😻','🐈'];
+  const NORMAL_EMOJI = ['✨','🌟','💖','⭐','☀️','🌈'];
+  const crown = $('accCrown');
+  crown.style.pointerEvents = 'auto';
+  crown.style.cursor = 'default';   // no hints — it's a secret!
+  crown.addEventListener('click', () => {
+    crownTaps++;
+    clearTimeout(crownTapTimer);
+    crownTapTimer = setTimeout(() => crownTaps = 0, 2000);  // taps must be quick
+    if (crownTaps >= 5) {
+      crownTaps = 0;
+      meowMode = !meowMode;
+      if (meowMode) meowUsed = true;
+      EMOJI.length = 0;
+      EMOJI.push(...(meowMode ? CAT_EMOJI : NORMAL_EMOJI));
+      uni.textContent = meowMode ? '🐈' : '🦄';
+      document.body.classList.toggle('meow-mode', meowMode);
+      rainbowStorm(40);
+      toast(meowMode ? '🐱 MEOW MODE ACTIVATED! 🐱' : 'Back to unicorns! 🦄');
+    }
+  });
+
+  // ---------- 🔊 Sounds (tiny Web Audio synth) ----------
+  let soundOn = true;
+  let audioCtx = null;
+  function ctx() {
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  // One general-purpose voice: freq (Hz), endFreq for slides, duration (s), type, volume
+  function tone(freq, dur, { type = 'sine', vol = 0.12, endFreq = null, delay = 0 } = {}) {
+    if (!soundOn) return;
+    const ac = ctx(); if (!ac) return;
+    const t0 = ac.currentTime + delay;
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  const sfx = {
+    pop:     () => tone(500 + Math.random() * 300, 0.08, { type:'triangle', vol:0.08 }),
+    buy:     () => { tone(523, 0.1, { vol:0.1 }); tone(784, 0.14, { vol:0.1, delay:0.09 }); },
+    sticker: () => { tone(659, 0.1, { vol:0.1 }); tone(880, 0.1, { vol:0.1, delay:0.1 }); tone(1175, 0.2, { vol:0.1, delay:0.2 }); },
+    meow:    () => { tone(700, 0.25, { type:'sawtooth', vol:0.06, endFreq:400 }); },
+    thunder: () => { tone(90, 0.5, { type:'sawtooth', vol:0.14, endFreq:45 }); },
+    fanfare: () => [523,659,784,1047,1319].forEach((f,i) => tone(f, 0.22, { vol:0.1, delay:i*0.09 })),
+  };
+  // Unlock audio on the first user gesture (browsers require it)
+  document.addEventListener('pointerdown', () => ctx(), { once:true });
+
+  // ---------- 📜 Quests ----------
+  // Each quest tracks a live counter against a baseline recorded when it starts.
+  const QUEST_TYPES = [
+    { t:'taps',   metric:() => totalTaps,          desc:n => 'Tap the unicorn ' + fmt(n) + ' times',   targets:[100, 500, 2000] },
+    { t:'earn',   metric:() => lifetimeEarned,     desc:n => 'Earn ' + fmt(n) + ' sparkles',           targets:null }, // scaled to production
+    { t:'foods',  metric:() => foodsBought,        desc:n => 'Buy ' + fmt(n) + ' foods',               targets:[3, 8, 15] },
+    { t:'bfly',   metric:() => butterfliesCaught,  desc:n => 'Catch ' + n + ' golden butterfl' + (n>1?'ies':'y'), targets:[1, 2] },
+    { t:'pets',   metric:() => kittyPets,          desc:n => 'Catch the crazy kitty ' + n + ' times',  targets:[3, 8] },
+    { t:'chill',  metric:() => chillCount,         desc:n => 'Reach maximum chill ' + (n>1 ? n+' times' : 'once'), targets:[1, 2] },
+    { t:'rescue', metric:() => snacksRescued,      desc:n => 'Rescue ' + (n>1 ? n+' snacks' : 'a snack') + ' from the sneaky kitty', targets:[1, 2] },
+  ];
+  let quests = [];  // {t, target, base, reward}
+
+  function questReward() {
+    return Math.max(500, Math.floor(totalSps() * 60));  // ~1 minute of production
+  }
+  function newQuest() {
+    const activeTypes = quests.map(q => q.t);
+    const pool = QUEST_TYPES.filter(qt => !activeTypes.includes(qt.t));
+    const qt = pool[Math.random() * pool.length | 0];
+    let target;
+    if (qt.t === 'earn') target = Math.max(1000, Math.floor(totalSps() * 120 + clickPower * 200));
+    else target = qt.targets[Math.random() * qt.targets.length | 0];
+    return { t: qt.t, target, base: qt.metric(), reward: questReward() };
+  }
+  function ensureQuests() { while (quests.length < 3) quests.push(newQuest()); }
+
+  const questListEl = $('questList');
+  function renderQuests() {
+    ensureQuests();
+    // complete finished quests
+    for (let i = 0; i < quests.length; i++) {
+      const q = quests[i];
+      const qt = QUEST_TYPES.find(x => x.t === q.t);
+      if (qt.metric() - q.base >= q.target) {
+        earn(q.reward);
+        toast('📜 Quest complete! +' + fmt(q.reward) + ' ✨');
+        sfx.sticker();
+        quests[i] = null;
+      }
+    }
+    quests = quests.filter(Boolean);
+    ensureQuests();
+    questListEl.innerHTML = quests.map(q => {
+      const qt = QUEST_TYPES.find(x => x.t === q.t);
+      const prog = Math.min(q.target, Math.max(0, qt.metric() - q.base));
+      const pct = Math.min(100, prog / q.target * 100);
+      return '<div class="quest"><div class="q-top"><span class="q-desc">' + qt.desc(q.target) +
+        '</span><span class="q-reward">+' + fmt(q.reward) + ' ✨</span></div>' +
+        '<div class="q-bar"><div class="q-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="q-prog">' + fmt(Math.floor(prog)) + ' / ' + fmt(q.target) + '</div></div>';
+    }).join('');
+  }
+  setInterval(() => { if (!paused) renderQuests(); }, 500);
+
+  // ---------- 📊 Statistics ----------
+  const statsModal = $('statsModal');
+  function fmtTime(sec) {
+    sec = Math.floor(sec);
+    const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s2 = sec%60;
+    return (h ? h + 'h ' : '') + m + 'm ' + s2 + 's';
+  }
+  function renderStats() {
+    const rows = [
+      ['👆 Total taps', fmt(totalTaps)],
+      ['✨ Lifetime sparkles', fmt(Math.floor(lifetimeEarned))],
+      ['🏃 This run', fmt(Math.floor(totalEarned))],
+      ['⚡ Sparkles per second', fmt(totalSps())],
+      ['🍓 Foods bought (ever)', fmt(foodsBought)],
+      ['🍽️ Foods owned now', fmt(ITEMS.reduce((s,i)=>s+i.owned,0))],
+      ['🛋️ Decorations', DECOR.filter(d=>d.owned).length + ' of ' + DECOR.length],
+      ['🎟️ Stickers', unlockedStickers.size + ' of ' + STICKERS.length],
+      ['💎 Rainbow Gems', fmt(gems)],
+      ['🌈 Rebirths', fmt(rebirths)],
+      ['🦋 Butterflies caught', fmt(butterfliesCaught)],
+      ['🐈‍⬛ Snacks rescued', fmt(snacksRescued)],
+      ['🐈 Crazy kitty catches', fmt(kittyPets)],
+      ['😌 Times maximum chill', fmt(chillCount)],
+      ['☁️ Clouds touched today', fmt(sessionCloudTouches)],
+      ['⏱️ Played this sitting', fmtTime(sessionSeconds)],
+      ['🕰️ Played all-time', fmtTime(totalPlaySeconds)],
+    ];
+    $('statsList').innerHTML = rows.map(r =>
+      '<div class="stat-row"><span class="st-name">' + r[0] + '</span><span class="st-val">' + r[1] + '</span></div>'
+    ).join('');
+  }
+  $('statsBtn').addEventListener('click', () => { menuModal.hidden = true; renderStats(); statsModal.hidden = false; });
+  $('statsClose').addEventListener('click', () => statsModal.hidden = true);
+  statsModal.addEventListener('click', e => { if (e.target === statsModal) statsModal.hidden = true; });
+  setInterval(() => { if (!statsModal.hidden && !paused) renderStats(); }, 1000);  // live while open
+
   // ---------- Drifting clouds (don't touch them!) ----------
   const cloudsEl = $('clouds');
+  let sessionCloudTouches = 0;
+  let sessionSeconds = 0;   // counted while unpaused, for the Cloud Survivor sticker
   function cloudSteal(e, cloud) {
+    if (!mischiefOn) return;   // mischief off: clouds are just fluffy decoration
+    sessionCloudTouches++;
     const ownedItems = ITEMS.filter(i => i.owned > 0);
     const lostSparkles = Math.floor(sparkles);
     if (lostSparkles <= 0 && ownedItems.length === 0) {
@@ -1386,13 +1762,15 @@
       lostName = ' and a ' + victim.name + ' ' + victim.icon;
     }
     cloud.classList.remove('gulp'); void cloud.offsetWidth; cloud.classList.add('gulp');
+    sfx.thunder();
     floatNum('☁️ -' + fmt(lostSparkles) + ' ✨', e.clientX, e.clientY);
     toast('⛈️ Oh no! The cloud gobbled ' + fmt(lostSparkles) + ' sparkles' + lostName + '!');
     render();
   }
+  const cloudSpans = [];
   for (let i = 0; i < 7; i++) {
     const c = document.createElement('span');
-    c.textContent = '☁️';
+    c.innerHTML = '☁️<span class="cface">😏</span>';
     c.setAttribute('title', '…probably don\u2019t touch this');
     c.style.top = (Math.random()*24) + 'vh';   // clouds keep to the sky, above the play area
     c.style.left = (Math.random()*100) + 'vw';
@@ -1401,7 +1779,17 @@
     c.style.animationDelay = (-Math.random()*40) + 's';
     c.addEventListener('click', e => cloudSteal(e, c));
     cloudsEl.appendChild(c);
+    cloudSpans.push(c);
   }
+  // Every so often, a cloud grins and wiggles to tempt her. Stay strong!
+  setInterval(() => {
+    if (paused || !mischiefOn) return;
+    if (Math.random() < 0.5) {
+      const c = cloudSpans[Math.random() * cloudSpans.length | 0];
+      c.classList.add('tease');
+      setTimeout(() => c.classList.remove('tease'), 1600);
+    }
+  }, 6000);
 
   render();
 })();
