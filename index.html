@@ -561,7 +561,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v7.3</p>
+  <p class="version-tag">v7.4</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -960,6 +960,16 @@
       if (meter >= 100) startChill();
     }
     render();
+  });
+
+  // ⌨️ Spacebar taps the unicorn too (hold it down for key-repeat tapping!)
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'Space') return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'BUTTON')) return;
+    if (paused) return;
+    e.preventDefault();   // stop the page from scrolling
+    uni.click();
   });
 
   function startChill() {
