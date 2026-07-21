@@ -411,6 +411,11 @@
   .sticker.locked .s-icon { filter:grayscale(1); }
   .sticker.unlocked { border-color:var(--sun-bright); background:#fff9ec; box-shadow:0 0 12px rgba(255,179,71,.25); }
 
+  .sell-bar { display:flex; justify-content:center; gap:8px; margin:4px 0 10px; flex-wrap:wrap; }
+  #sellModeBtn.on, body.sell-mode .item:not(:disabled) { border-color:#e8951a; }
+  body.sell-mode .item:not(:disabled) { background:#fff9ec; }
+  body.sell-mode .item .cost { color:#2e9e5b; }
+
   .quests { display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
   .quest {
     background:var(--panel); border:2px solid #eee2f6; border-radius:16px;
@@ -446,6 +451,24 @@
   }
   .stk-pager .pill-btn:disabled { opacity:.4; cursor:default; }
 
+  .code-box2 {
+    width:100%; font-family:monospace; font-size:.7rem;
+    border:2px solid #eee2f6; border-radius:12px; padding:8px;
+    color:var(--ink); background:#faf5ff; resize:none; margin:10px 0;
+    word-break:break-all;
+  }
+  .code-box2:focus-visible { outline:3px dashed var(--aqua); }
+
+  .roampet {
+    position:absolute; z-index:13; top:60vh; left:40vw;
+    font-size:clamp(1.5rem, 6.5vw, 2rem); pointer-events:none;
+    transition: left 3.5s ease-in-out, top 3.5s ease-in-out;
+    filter: drop-shadow(0 3px 6px rgba(74,53,96,.25));
+  }
+  .roampet .pbody { display:inline-block; animation: petTrot 1s ease-in-out infinite; }
+  .roampet.flip .pbody { transform:scaleX(-1); }
+  @keyframes petTrot { 0%,100%{margin-top:0} 50%{margin-top:-4px} }
+  body.paused .roampet .pbody { animation-play-state:paused; }
   .qr-box {
     display:flex; justify-content:center; align-items:center;
     background:#fff; border-radius:14px; padding:14px; margin:10px auto;
@@ -538,7 +561,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v6.3</p>
+  <p class="version-tag">v7.3</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -581,6 +604,11 @@
 
   <button class="pill-btn rainbow wide" id="rebirthBtn" hidden>🌈 Rainbow Rebirth</button>
 
+  <div class="sell-bar">
+    <button class="pill-btn" id="sellModeBtn">💰 Sell Mode: OFF</button>
+    <button class="pill-btn" id="sellGemBtn" hidden>💎 Sell 1 gem</button>
+  </div>
+
   <h2>Quests</h2>
   <p class="section-sub">Little goals, little rewards — they refresh when done! 📜</p>
   <div class="quests" id="questList"></div>
@@ -613,14 +641,10 @@
       <button class="pill-btn wide" id="statsBtn">📊 Statistics</button>
       <button class="pill-btn wide" id="closetBtn">👒 Unicorn Closet</button>
       <button class="pill-btn wide" id="bankBtn">🏦 Sparkle Bank</button>
+      <button class="pill-btn wide" id="petBtn">🐾 Adopt a Pet</button>
       <button class="pill-btn wide" id="saveBtn">💾 Save</button>
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
-      <button class="pill-btn wide" id="exportBtn">📤 Save to file</button>
-      <button class="pill-btn wide" id="importBtn">📥 Load from file</button>
-      <button class="pill-btn wide" id="beamSendBtn">📡 Send with a code</button>
-      <button class="pill-btn wide" id="beamRecvBtn">📡 Receive with a code</button>
-      <button class="pill-btn wide" id="qrShowBtn">📷 Show save as QR</button>
-      <button class="pill-btn wide" id="qrScanBtn">📷 Scan a save QR</button>
+      <button class="pill-btn wide" id="shareBtn">📤 Share &amp; Transfer</button>
       <button class="pill-btn wide" id="soundBtn">🔊 Sounds: ON</button>
       <button class="pill-btn wide" id="updateBtn">🔄 Check for updates</button>
       <button class="pill-btn wide" id="devBtn">🛠️ Dev Menu</button>
@@ -692,6 +716,50 @@
     And inside this gift box… <b>3 free gems</b> to get you started. 💎💎💎</p>
     <div class="menu-list">
       <button class="pill-btn wide rainbow" id="surpriseOk">🌈 Let's go!</button>
+    </div>
+  </div>
+</div>
+<div class="modal-back" id="petModal" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>🐾 Pet Adoption</h3><button class="modal-close" id="petClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Adopt friends with Rainbow Gems 💎! They live in the room and sometimes bring you presents. 💝</p>
+    <div class="sticker-grid" id="petGrid"></div>
+  </div>
+</div>
+<div class="modal-back" id="shareModal" hidden>
+  <div class="modal menu-modal">
+    <div class="modal-head"><h3>📤 Share &amp; Transfer</h3><button class="modal-close" id="shareClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Move your game to another device — pick whichever way works!</p>
+    <div class="menu-list">
+      <button class="pill-btn wide" id="linkBtn">🔗 Transfer link</button>
+      <button class="pill-btn wide" id="exportBtn">📤 Save to file</button>
+      <button class="pill-btn wide" id="importBtn">📥 Load from file</button>
+      <button class="pill-btn wide" id="qrShowBtn">📷 Show save as QR</button>
+      <button class="pill-btn wide" id="qrScanBtn">📷 Scan a save QR</button>
+      <button class="pill-btn wide" id="beamSendBtn">📡 Send with a code</button>
+      <button class="pill-btn wide" id="beamRecvBtn">📡 Receive with a code</button>
+    </div>
+  </div>
+</div>
+<div class="modal-back" id="linkModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <h3 class="pause-title">🔗 Transfer link</h3>
+    <p class="modal-sub" style="text-align:center;">Send this link to the other device (email, message, anything). Opening it there imports this save.</p>
+    <textarea class="code-box2" id="linkBox" readonly rows="4"></textarea>
+    <div class="menu-list">
+      <button class="pill-btn wide rainbow" id="linkCopy">📋 Copy link</button>
+      <button class="pill-btn wide" id="linkClose">Done</button>
+    </div>
+  </div>
+</div>
+<div class="modal-back" id="linkImportModal" hidden>
+  <div class="modal menu-modal pause-card">
+    <div class="pause-big">🔗</div>
+    <h3 class="pause-title">Save link found!</h3>
+    <p class="modal-sub" style="text-align:center;">This link carries a Unicorn Couch save.<br><b>Importing replaces the progress on this device!</b></p>
+    <div class="menu-list">
+      <button class="pill-btn wide rainbow" id="linkImportGo">📥 Import it</button>
+      <button class="pill-btn wide" id="linkImportNo">No thanks</button>
     </div>
   </div>
 </div>
@@ -847,7 +915,9 @@
     btnRefs[it.id] = b;
   });
 
+  let sellMode = false;
   function buy(it, btn) {
+    if (sellMode) { sellItem(it, btn); return; }
     const c = costOf(it);
     if (sparkles < c) return;
     sparkles -= c;
@@ -855,6 +925,17 @@
     if (it.clickMult) clickPower *= it.clickMult;
     foodsBought++;
     burst(btn.getBoundingClientRect(), 6);
+    sfx.buy();
+    render();
+  }
+  function sellItem(it, btn) {
+    if (it.owned < 1) return;
+    it.owned--;
+    if (it.priceResetAt > it.owned) it.priceResetAt = it.owned;
+    const refund = Math.floor(costOf(it) * 0.5);
+    sparkles += refund;
+    if (it.clickMult) clickPower = Math.max(1, clickPower / it.clickMult);
+    floatNum('+' + fmt(refund) + ' ✨', btn.getBoundingClientRect().left + 60, btn.getBoundingClientRect().top);
     sfx.buy();
     render();
   }
@@ -935,12 +1016,18 @@
 
     ITEMS.forEach(it => {
       const b = btnRefs[it.id];
-      const c = costOf(it);
-      b.querySelector('.cost').textContent = fmt(c) + ' ✨';
       b.querySelector('.owned').textContent = it.owned ? '×' + it.owned : '';
-      const can = sparkles >= c;
-      b.disabled = !can;
-      b.classList.toggle('affordable', can);
+      if (sellMode) {
+        b.querySelector('.cost').textContent = it.owned ? 'Sell +' + fmt(Math.floor(costOf({...it, owned: it.owned-1, priceResetAt: Math.min(it.priceResetAt||0, it.owned-1)}) * 0.5)) + ' ✨' : '—';
+        b.disabled = it.owned < 1;
+        b.classList.toggle('affordable', it.owned >= 1);
+      } else {
+        const c = costOf(it);
+        b.querySelector('.cost').textContent = fmt(c) + ' ✨';
+        const can = sparkles >= c;
+        b.disabled = !can;
+        b.classList.toggle('affordable', can);
+      }
     });
   }
 
@@ -1011,6 +1098,9 @@
     { id:'meow',     icon:'🐱', name:'MEOW?!',             desc:'You found the royal secret…', secret:true, cond:() => meowUsed },
     { id:'cloudfan', icon:'🌩️', name:'Cloud Snack',        desc:'Feed the clouds 5 times in one sitting. Why?!', secret:true, cond:() => sessionCloudTouches >= 5 },
     { id:'gift',     icon:'🎀', name:'Gift Opener',        desc:'You opened the surprise!', secret:true, cond:() => giftOpened },
+    { id:'petpal',   icon:'🐾', name:'Pet Parent',         desc:'Adopt your first pet', cond:() => petsOwned.length >= 1 },
+    { id:'zoo15',    icon:'🎪', name:'Zoo Keeper',         desc:'Adopt 15 pets', cond:() => petsOwned.length >= 15 },
+    { id:'allpets',  icon:'🏡', name:'Whole Zoo',          desc:'Adopt every single pet', cond:() => petsOwned.length >= PETS.length },
   ];
   const unlockedStickers = new Set();
 
@@ -1108,6 +1198,7 @@
       q: quests,
       cl: closetOwned,
       wr: worn,
+      pets: petsOwned,
       dg: lastDaily,
       bk: Math.floor(bankBalance),
       ts: Date.now(),
@@ -1145,6 +1236,8 @@
     foodsBought = state.fb || 0;
     closetOwned = Array.isArray(state.cl) ? state.cl : [];
     worn = state.wr || null;
+    petsOwned = Array.isArray(state.pets) ? state.pets : [];
+    renderPets();
     lastDaily = state.dg || '';
     bankBalance = state.bk || 0;
     renderCloset();
@@ -1181,7 +1274,7 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    menuModal.hidden = true;
+    hideShare();
     toast('📤 Save file downloaded — keep it somewhere safe!');
   });
   $('importBtn').addEventListener('click', () => $('importFile').click());
@@ -1193,7 +1286,7 @@
       try {
         applySave(reader.result.trim());
         storageSave();
-        menuModal.hidden = true;
+        hideShare();
         toast('📥 Save loaded from file — welcome back! 🦄');
       } catch {
         toast("Hmm, that file doesn't look like a Unicorn Couch save 😕");
@@ -1262,6 +1355,14 @@
     decorRefs[d.id] = { btn: b, costEl: b.querySelector('.cost') };
   });
   function buyDecor(d, btn) {
+    if (sellMode && d.owned) {
+      d.owned = false;
+      const refund = Math.floor(d.cost * 0.5);
+      sparkles += refund;
+      toast(d.icon + ' ' + d.name + ' sold. +' + fmt(refund) + ' ✨ (half back)');
+      renderDecor(); render(); storageSave();
+      return;
+    }
     if (d.owned || sparkles < d.cost) return;
     sparkles -= d.cost;
     d.owned = true;
@@ -1277,9 +1378,9 @@
       if (spot) spot.hidden = !d.owned;
       const { btn, costEl } = decorRefs[d.id];
       if (d.owned) {
-        costEl.textContent = 'Owned ✓';
-        btn.disabled = true;
-        btn.classList.remove('affordable');
+        costEl.textContent = sellMode ? 'Sell +' + fmt(Math.floor(d.cost*0.5)) + ' ✨' : 'Owned ✓';
+        btn.disabled = !sellMode;
+        btn.classList.toggle('affordable', sellMode);
       } else {
         const costText = fmt(d.cost) + ' ✨';
         if (costEl.textContent !== costText) costEl.textContent = costText;
@@ -1403,6 +1504,7 @@
     totalPlaySeconds = 0; foodsBought = 0;
     quests = [];  // fresh goals for the fresh start
     closetOwned = []; worn = null; renderCloset();
+    petsOwned = []; renderPets();
     lastDaily = '';
     bankBalance = 0;
     endChill();
@@ -1481,6 +1583,28 @@
   $('summonSneakyBtn').addEventListener('click', () => {
     document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
     if (!doSneaky()) toast('The sneaky kitty peeked in… but there are no snacks to steal! Buy a food first.');
+  });
+
+  // Sell Mode + gem selling
+  const gemSellValue = () => Math.max(100000, Math.floor(totalSps() * 600));
+  $('sellModeBtn').addEventListener('click', () => {
+    sellMode = !sellMode;
+    $('sellModeBtn').textContent = '💰 Sell Mode: ' + (sellMode ? 'ON' : 'OFF');
+    $('sellModeBtn').classList.toggle('on', sellMode);
+    $('sellGemBtn').hidden = !sellMode;
+    document.body.classList.toggle('sell-mode', sellMode);
+    toast(sellMode ? '💰 Sell Mode — tap foods, decorations, or pets to sell them for half price!' : 'Back to buying!');
+    render(); renderDecor();
+  });
+  setInterval(() => { if (sellMode) $('sellGemBtn').textContent = '💎 Sell 1 gem → +' + fmt(gemSellValue()) + ' ✨'; }, 1000);
+  $('sellGemBtn').addEventListener('click', () => {
+    if (gems < 1) { toast('No gems to sell!'); return; }
+    gems--;
+    const v = gemSellValue();
+    sparkles += v;
+    toast('💎 Sold a gem for +' + fmt(v) + ' ✨ (your boost is now +' + Math.round(gems*10) + '%)');
+    sfx.buy();
+    render(); storageSave();
   });
 
   const kittyBtn = $('kittyBtn');
@@ -2004,6 +2128,216 @@
   $('closetClose').addEventListener('click', () => closetModal.hidden = true);
   closetModal.addEventListener('click', e => { if (e.target === closetModal) closetModal.hidden = true; });
 
+  // ---------- 🐾 Pet Adoption ----------
+  const PETS = [   // priced in sparkles ✨
+    { id:'hamster', icon:'🐹', name:'Hamster',     cost:100e3 },
+    { id:'turtle',  icon:'🐢', name:'Turtle',      cost:1e6 },
+    { id:'bunny',   icon:'🐰', name:'Bunny',       cost:10e6 },
+    { id:'puppy',   icon:'🐶', name:'Puppy',       cost:100e6 },
+    { id:'parrot',  icon:'🦜', name:'Parrot',      cost:1e9 },
+    { id:'hedgehog',icon:'🦔', name:'Hedgehog',    cost:10e9 },
+    { id:'frog',    icon:'🐸', name:'Frog',        cost:100e9 },
+    { id:'duck',    icon:'🦆', name:'Duck',        cost:1e12 },
+    { id:'owl',     icon:'🦉', name:'Owl',         cost:10e12 },
+    { id:'dragon',  icon:'🐉', name:'Baby Dragon', cost:100e12 },
+    { id:'chipmunk',icon:'🐿️', name:'Chipmunk',    cost:250e3 },
+    { id:'mouse',   icon:'🐭', name:'Mouse',       cost:500e3 },
+    { id:'kitten',  icon:'🐱', name:'Kitten',      cost:2.5e6 },
+    { id:'fox',     icon:'🦊', name:'Fox',         cost:5e6 },
+    { id:'otter',   icon:'🦦', name:'Otter',       cost:25e6 },
+    { id:'koala',   icon:'🐨', name:'Koala',       cost:50e6 },
+    { id:'panda',   icon:'🐼', name:'Panda',       cost:250e6 },
+    { id:'sloth',   icon:'🦥', name:'Sloth',       cost:500e6 },
+    { id:'penguin', icon:'🐧', name:'Penguin',     cost:2.5e9 },
+    { id:'flamingo',icon:'🦩', name:'Flamingo',    cost:5e9 },
+    { id:'swan',    icon:'🦢', name:'Swan',        cost:25e9 },
+    { id:'peacock', icon:'🦚', name:'Peacock',     cost:50e9 },
+    { id:'piglet',  icon:'🐷', name:'Piglet',      cost:250e9 },
+    { id:'lamb',    icon:'🐑', name:'Lamb',        cost:500e9 },
+    { id:'llama',   icon:'🦙', name:'Llama',       cost:2.5e12 },
+    { id:'goat',    icon:'🐐', name:'Goat',        cost:5e12 },
+    { id:'deer',    icon:'🦌', name:'Deer',        cost:25e12 },
+    { id:'pony',    icon:'🐴', name:'Pony',        cost:50e12 },
+    { id:'zebra',   icon:'🦓', name:'Zebra',       cost:250e12 },
+    { id:'giraffe', icon:'🦒', name:'Giraffe',     cost:500e12 },
+    { id:'elephant',icon:'🐘', name:'Elephant',    cost:1e15 },
+    { id:'hippo',   icon:'🦛', name:'Hippo',       cost:2.5e15 },
+    { id:'rhino',   icon:'🦏', name:'Rhino',       cost:5e15 },
+    { id:'camel',   icon:'🐫', name:'Camel',       cost:10e15 },
+    { id:'kangaroo',icon:'🦘', name:'Kangaroo',    cost:25e15 },
+    { id:'bear',    icon:'🐻', name:'Bear',        cost:50e15 },
+    { id:'polar',   icon:'🐻‍❄️', name:'Polar Bear', cost:100e15 },
+    { id:'seal',    icon:'🦭', name:'Seal',        cost:250e15 },
+    { id:'dolphin', icon:'🐬', name:'Dolphin',     cost:500e15 },
+    { id:'whale',   icon:'🐳', name:'Whale',       cost:1e18 },
+  ];
+  PETS.sort((a, b) => a.cost - b.cost);   // shop lists cheapest first
+  let petsOwned = [];
+  const petEls = {};
+  const roomEl = document.querySelector('.room');
+
+  const petModal = $('petModal');
+  const petGrid = $('petGrid');
+  const petCells = {};
+  PETS.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'sticker closet-item';
+    d.addEventListener('click', () => adoptPet(p));
+    petGrid.appendChild(d);
+    petCells[p.id] = d;
+  });
+  function adoptPet(p) {
+    if (sellMode && petsOwned.includes(p.id)) {
+      petsOwned = petsOwned.filter(id => id !== p.id);
+      const refund = Math.floor(p.cost * 0.5);
+      sparkles += refund;
+      toast(p.icon + ' ' + p.name + ' found a new home. +' + fmt(refund) + ' ✨ (half back)');
+      renderPetShop(); renderPets(); render(); storageSave();
+      return;
+    }
+    if (petsOwned.includes(p.id)) { toast(p.icon + ' ' + p.name + ' is already part of the family!'); return; }
+    if (sparkles < p.cost) { toast('Not enough sparkles — this friend needs ' + fmt(p.cost) + ' ✨'); return; }
+    sparkles -= p.cost;
+    petsOwned.push(p.id);
+    sfx.buy();
+    rainbowStorm(30);
+    toast('🐾 You adopted a ' + p.name + '! ' + p.icon);
+    renderPetShop(); renderPets(); render(); storageSave();
+  }
+  function renderPetShop() {
+    PETS.forEach(p => {
+      const cell = petCells[p.id];
+      const owned = petsOwned.includes(p.id);
+      cell.classList.toggle('wearing', owned);
+      cell.classList.toggle('cantafford', !owned && sparkles < p.cost);
+      cell.innerHTML = '<span class="s-icon">' + p.icon + '</span><span class="s-name">' + p.name + '</span>' +
+        '<span class="s-desc">' + (owned ? (sellMode ? 'Sell +' + fmt(Math.floor(p.cost*0.5)) + ' ✨' : 'Living here! 🏡') : fmt(p.cost) + ' ✨') + '</span>';
+    });
+  }
+  function renderPets() {
+    PETS.forEach(p => {
+      const owned = petsOwned.includes(p.id);
+      if (owned && !petEls[p.id]) {
+        const el = document.createElement('span');
+        el.className = 'roampet';
+        el.innerHTML = '<span class="pbody">' + p.icon + '</span>';
+        el.style.left = (10 + Math.random() * (document.documentElement.clientWidth - 80)) + 'px';
+        el.style.top = (90 + Math.random() * Math.max(200, document.documentElement.scrollHeight - 180)) + 'px';
+        document.body.appendChild(el);
+        petEls[p.id] = el;
+        schedulePetGift(p);
+      } else if (!owned && petEls[p.id]) {
+        petEls[p.id].remove();
+        delete petEls[p.id];
+      }
+    });
+  }
+  // Wandering — continuous: a new stroll begins the moment the last one ends
+  function roamPet(el) {
+    // The WHOLE page is theirs — top of the sky to the bottom of the shop
+    const pageW = document.documentElement.clientWidth;
+    const pageH = document.documentElement.scrollHeight;
+    const curX = parseFloat(el.style.left) || pageW / 2;
+    const curY = parseFloat(el.style.top) || 300;
+    const nx = 10 + Math.random() * (pageW - 70);
+    const ny = 90 + Math.random() * (pageH - 180);
+    const dist = Math.hypot(nx - curX, ny - curY);
+    const secs = Math.max(1.5, Math.min(9, dist * 0.012));   // constant walking speed
+    el.style.transitionDuration = secs + 's, ' + secs + 's';
+    el.style.left = nx + 'px';
+    el.style.top = ny + 'px';
+    el.classList.toggle('flip', nx > curX);
+    el._movingUntil = performance.now() + secs * 1000;
+  }
+  setInterval(() => {
+    if (paused) return;   // pets glide to a stop while paused, then resume
+    Object.values(petEls).forEach(el => {
+      if (!el._movingUntil || performance.now() >= el._movingUntil) roamPet(el);
+    });
+  }, 250);
+  // Presents
+  function schedulePetGift(p) {
+    // With a big zoo, each pet brings presents less often — about 3/minute total, max
+    const crowd = Math.max(1, petsOwned.length / 4);
+    setTimeout(() => {
+      if (!petsOwned.includes(p.id)) return;   // pet gone (reset) — stop
+      if (!paused && petEls[p.id]) dropPetGift(p);
+      schedulePetGift(p);
+    }, (60000 + Math.random() * 90000) * crowd);
+  }
+  function dropPetGift(p) {
+    const pet = petEls[p.id];
+    const reward = Math.max(200, Math.floor(totalSps() * 120));
+    earn(reward);
+    const r = pet.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = Math.max(20, r.top - 10);
+    floatNum(p.icon + ' +' + fmt(reward) + ' ✨', x, y);
+    sparkleBurst(x, y);
+    sfx.sticker();
+    render();
+  }
+  $('petBtn').addEventListener('click', () => { menuModal.hidden = true; renderPetShop(); petModal.hidden = false; });
+  $('petClose').addEventListener('click', () => petModal.hidden = true);
+  petModal.addEventListener('click', e => { if (e.target === petModal) petModal.hidden = true; });
+
+  // ---------- 📤 Share & Transfer submenu ----------
+  const shareModal = $('shareModal');
+  const hideShare = () => { menuModal.hidden = true; shareModal.hidden = true; };
+  $('shareBtn').addEventListener('click', () => { menuModal.hidden = true; shareModal.hidden = false; });
+  $('shareClose').addEventListener('click', () => shareModal.hidden = true);
+  shareModal.addEventListener('click', e => { if (e.target === shareModal) shareModal.hidden = true; });
+
+  // ---------- 🔗 Transfer links (works on ANY browser — no camera, no server) ----------
+  function buildTransferLink() {
+    return location.origin + location.pathname + '#uc=' + makeSave();
+  }
+  $('linkBtn').addEventListener('click', () => {
+    hideShare();
+    $('linkBox').value = buildTransferLink();
+    $('linkModal').hidden = false;
+  });
+  $('linkClose').addEventListener('click', () => $('linkModal').hidden = true);
+  $('linkModal').addEventListener('click', e => { if (e.target === $('linkModal')) $('linkModal').hidden = true; });
+  $('linkCopy').addEventListener('click', () => {
+    const box = $('linkBox');
+    box.select(); box.setSelectionRange(0, 999999);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(box.value)
+        .then(() => toast('🔗 Link copied — send it to the other device!'))
+        .catch(() => { document.execCommand('copy'); toast('🔗 Link copied!'); });
+    } else {
+      document.execCommand('copy');
+      toast('🔗 Link copied!');
+    }
+  });
+
+  // Incoming: a #uc= hash means this page was opened from a transfer link
+  let pendingLinkSave = null;
+  function checkIncomingLink() {
+    if (!location.hash.startsWith('#uc=')) return;
+    pendingLinkSave = location.hash.slice(4);
+    // Clear the hash right away so a refresh doesn't re-prompt
+    history.replaceState(null, '', location.pathname + location.search);
+    document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
+    $('linkImportModal').hidden = false;
+  }
+  $('linkImportGo').addEventListener('click', () => {
+    try {
+      applySave(pendingLinkSave);
+      storageSave();
+      $('linkImportModal').hidden = true;
+      rainbowStorm(40);
+      toast('🔗 Save imported — welcome to this device! 🦄');
+    } catch {
+      $('linkImportModal').hidden = true;
+      toast("Hmm, that link's save didn't work 😕");
+    }
+    pendingLinkSave = null;
+  });
+  $('linkImportNo').addEventListener('click', () => { pendingLinkSave = null; $('linkImportModal').hidden = true; });
+  setTimeout(checkIncomingLink, 300);   // after autoload, so the prompt sits on top
+
   // ---------- 📷 QR save transfer (no server needed!) ----------
   function loadScript(url) {
     return new Promise((res, rej) => {
@@ -2015,7 +2349,7 @@
   let qrLibs = { make: false, read: false };
 
   $('qrShowBtn').addEventListener('click', async () => {
-    menuModal.hidden = true;
+    hideShare();
     const code = makeSave();
     if (code.length > 2500) { toast('Save is too big for a QR — use Save to file instead!'); return; }
     try {
@@ -2040,7 +2374,7 @@
     $('qrScanModal').hidden = true;
   }
   $('qrScanBtn').addEventListener('click', async () => {
-    menuModal.hidden = true;
+    hideShare();
     try {
       if (!qrLibs.read) {
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js');
@@ -2091,7 +2425,7 @@
 
   $('beamSendBtn').addEventListener('click', async () => {
     if (!relayReady()) { toast('Transfer relay not set up yet — see unicorn-couch-relay.gs'); return; }
-    menuModal.hidden = true;
+    hideShare();
     toast('📡 Sending your save…');
     try {
       const res = await fetch(RELAY_URL, { method:'POST', body: makeSave() });
@@ -2108,7 +2442,7 @@
 
   $('beamRecvBtn').addEventListener('click', () => {
     if (!relayReady()) { toast('Transfer relay not set up yet — see unicorn-couch-relay.gs'); return; }
-    menuModal.hidden = true;
+    hideShare();
     $('beamInput').value = '';
     $('beamRecvModal').hidden = false;
     $('beamInput').focus();
