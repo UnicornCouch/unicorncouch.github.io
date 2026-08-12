@@ -615,7 +615,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v8.0</p>
+  <p class="version-tag">v8.2</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -742,6 +742,7 @@
       <button class="pill-btn wide" id="summonSneakyBtn">🐈‍⬛ Summon sneaky kitty</button>
       <button class="pill-btn wide" id="priceResetBtn">💸 Reset all prices</button>
       <button class="pill-btn wide" id="replayGiftBtn">🎁 Replay the surprise</button>
+      <button class="pill-btn wide" id="allPetsBtn">🐾 Adopt ALL pets (restore)</button>
     </div>
     <p class="modal-sub" style="margin-top:10px;">Chill Meter: fill it by tapping for 12 seconds of ×5 everything. Kitty: press it and a kitty zooms around for 30 seconds — every catch gives bonus sparkles! Then the button rests for 10 seconds.</p>
   </div>
@@ -847,7 +848,7 @@
     <div class="pause-big">📡</div>
     <h3 class="pause-title">Your transfer code</h3>
     <p class="beam-code" id="beamCode">······</p>
-    <p class="modal-sub" style="text-align:center;">On the other device: Menu → Receive with a code, and type this in.<br>The code works once and expires in 15 minutes.</p>
+    <p class="modal-sub" style="text-align:center;">On the other device: Menu → Receive with a code, and type this in.<br>The code works once and clears itself after pickup (or 15 minutes).</p>
     <button class="pill-btn wide" id="beamSendClose">Done</button>
   </div>
 </div>
@@ -2048,6 +2049,12 @@
   setTimeout(maybeShowGift, 1500);  // after autoload, so it only appears once ever
 
   // Dev: replay the surprise (gift + rainbow storm + message; gems only granted once)
+  $('allPetsBtn').addEventListener('click', () => {
+    petsOwned = PETS.map(p => p.id);
+    renderPets(); renderPetShop(); render();
+    storageSave();
+    toast('🐾 The whole zoo is home! (' + PETS.length + ' pets — saved)');
+  });
   $('replayGiftBtn').addEventListener('click', () => {
     document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
     giftOpened = false;
@@ -2248,6 +2255,7 @@
       ['🍓 Foods bought (ever)', fmt(foodsBought)],
       ['🍽️ Foods owned now', fmt(ITEMS.reduce((s,i)=>s+i.owned,0))],
       ['🛋️ Decorations', DECOR.filter(d=>d.owned).length + ' of ' + DECOR.length],
+      ['🐾 Pets adopted', petsOwned.length + ' of ' + PETS.length],
       ['🎟️ Stickers', unlockedStickers.size + ' of ' + STICKERS.length],
       ['💎 Rainbow Gems', fmt(gems)],
       ['🌈 Rebirths', fmt(rebirths)],
@@ -2667,30 +2675,51 @@
   $('qrScanClose').addEventListener('click', stopScan);
   $('qrScanModal').addEventListener('click', e => { if (e.target === $('qrScanModal')) stopScan(); });
 
-  // ---------- 📡 Code transfer (via your Apps Script relay) ----------
-  // Deploy unicorn-couch-relay.gs as a web app and paste its /exec URL here:
-  const RELAY_URL = '';
-  const relayReady = () => RELAY_URL.startsWith('https://');
+  // ---------- 📡 Code transfer (over the network — zero setup!) ----------
+  // Uses a free public MQTT broker as the courier. The save travels under a
+  // random one-time code and is wiped from the broker after pickup.
+  const MQTT_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js';
+  const MQTT_HOST = 'broker.emqx.io', MQTT_PORT = 8084, MQTT_PATH = '/mqtt';
+  const XFER_PREFIX = 'unicorncouch/xfer/';
+  const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const makeXferCode = () => Array.from({length:6}, () => CODE_CHARS[Math.random()*CODE_CHARS.length|0]).join('');
+  let mqttLoaded = false;
 
+  async function brokerConnect() {
+    if (!mqttLoaded) { await loadScript(MQTT_LIB); mqttLoaded = true; }
+    return new Promise((res, rej) => {
+      const client = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, MQTT_PATH, 'uc-' + makeXferCode() + Date.now());
+      client.connect({ useSSL:true, timeout:8, onSuccess:() => res(client), onFailure:() => rej(new Error('broker')) });
+    });
+  }
+  function brokerPublish(client, topic, payload, retained) {
+    const m = new Paho.MQTT.Message(payload);
+    m.destinationName = topic;
+    m.retained = retained;
+    client.send(m);
+  }
+
+  let sendClient = null, sendTopic = null;
   $('beamSendBtn').addEventListener('click', async () => {
-    if (!relayReady()) { toast('Transfer relay not set up yet — see unicorn-couch-relay.gs'); return; }
     hideShare();
-    toast('📡 Sending your save…');
+    toast('📡 Connecting…');
     try {
-      const res = await fetch(RELAY_URL, { method:'POST', body: makeSave() });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'relay error');
-      $('beamCode').textContent = data.code;
+      sendClient = await brokerConnect();
+      const code = makeXferCode();
+      sendTopic = XFER_PREFIX + code;
+      brokerPublish(sendClient, sendTopic, makeSave(), true);   // retained: receiver can join late
+      $('beamCode').textContent = code;
       $('beamSendModal').hidden = false;
+      // Auto-clean after 15 minutes if this page is still open
+      setTimeout(() => { try { if (sendClient) { brokerPublish(sendClient, sendTopic, '', true); sendClient.disconnect(); sendClient = null; } } catch {} }, 900000);
     } catch {
-      toast("Couldn't reach the transfer relay 😕 Check your connection.");
+      toast("Couldn't reach the transfer network 😕 Check the internet connection.");
     }
   });
   $('beamSendClose').addEventListener('click', () => $('beamSendModal').hidden = true);
   $('beamSendModal').addEventListener('click', e => { if (e.target === $('beamSendModal')) $('beamSendModal').hidden = true; });
 
   $('beamRecvBtn').addEventListener('click', () => {
-    if (!relayReady()) { toast('Transfer relay not set up yet — see unicorn-couch-relay.gs'); return; }
     hideShare();
     $('beamInput').value = '';
     $('beamRecvModal').hidden = false;
@@ -2702,17 +2731,34 @@
     const code = $('beamInput').value.trim().toUpperCase();
     if (code.length < 4) { toast('Type the whole code first!'); return; }
     toast('📡 Looking for your save…');
+    let client = null, done = false;
     try {
-      const res = await fetch(RELAY_URL + '?code=' + encodeURIComponent(code));
-      const data = await res.json();
-      if (!data.ok) { toast(data.error === 'Code not found or expired' ? "That code isn't valid anymore — send a fresh one!" : 'Relay error 😕'); return; }
-      applySave(data.save);
-      storageSave();
-      $('beamRecvModal').hidden = true;
-      rainbowStorm(40);
-      toast('📡 Save transferred — welcome to this device! 🦄');
+      client = await brokerConnect();
+      const topic = XFER_PREFIX + code;
+      client.onMessageArrived = m => {
+        if (done || !m.payloadString) return;
+        done = true;
+        try {
+          applySave(m.payloadString);
+          storageSave();
+          brokerPublish(client, topic, '', true);   // wipe the code from the broker
+          $('beamRecvModal').hidden = true;
+          rainbowStorm(40);
+          toast('📡 Save transferred — welcome to this device! 🦄');
+        } catch {
+          toast("That code's save didn't work 😕");
+        }
+        try { client.disconnect(); } catch {}
+      };
+      client.subscribe(topic);
+      setTimeout(() => {
+        if (!done) {
+          try { client.disconnect(); } catch {}
+          toast("No save found on that code — make sure the other device pressed Send first!");
+        }
+      }, 10000);
     } catch {
-      toast("Couldn't reach the transfer relay 😕 Check your connection.");
+      toast("Couldn't reach the transfer network 😕 Check the internet connection.");
     }
   });
 
