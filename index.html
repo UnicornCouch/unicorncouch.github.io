@@ -64,6 +64,30 @@
   }
   #accMoon { top:-10%; right:-16%; }
 
+  /* Themes override the sky (and day/night) when active */
+  body.theme-bubblegum, body.theme-bubblegum.time-day, body.theme-bubblegum.time-evening, body.theme-bubblegum.time-night {
+    background: linear-gradient(180deg, #ffd6ec 0%, #ffc2e0 50%, #ffe3f3 100%);
+    background-attachment: fixed;
+  }
+  body.theme-ocean, body.theme-ocean.time-day, body.theme-ocean.time-evening, body.theme-ocean.time-night {
+    background: linear-gradient(180deg, #a8e4ff 0%, #7fc9f5 50%, #cdeffd 100%);
+    background-attachment: fixed;
+  }
+  body.theme-forest, body.theme-forest.time-day, body.theme-forest.time-evening, body.theme-forest.time-night {
+    background: linear-gradient(180deg, #d7f0c8 0%, #b3dfa0 50%, #e8f7dd 100%);
+    background-attachment: fixed;
+  }
+  body.theme-space, body.theme-space.time-day, body.theme-space.time-evening, body.theme-space.time-night {
+    background:
+      radial-gradient(400px 220px at 75% 8%, rgba(155,127,232,.35) 0%, rgba(155,127,232,0) 70%),
+      linear-gradient(180deg, #1b1440 0%, #2d1f5e 55%, #171033 100%);
+    background-attachment: fixed;
+  }
+  body.theme-space .tagline, body.theme-space .click-hint, body.theme-space .section-sub, body.theme-space .modal-sub { color:#c9bce8; }
+  body.theme-space h2, body.theme-space .stage-label, body.theme-space .meter-label { color:#e8ddff; }
+  body.theme-space .gems { background:#3b2a63; border-color:#5a4590; color:#d9c8ff; }
+  body.theme-space .clouds span { opacity:.3; }
+
   .clouds { position:fixed; inset:0; pointer-events:none; z-index:2; overflow:hidden; }
   .clouds span {
     position:absolute; opacity:.7;
@@ -248,6 +272,16 @@
   @keyframes swim { 0%,100%{transform:translateX(0) scaleX(1)} 45%{transform:translateX(6px) scaleX(1)} 50%{transform:translateX(6px) scaleX(-1)} 95%{transform:translateX(0) scaleX(-1)} }
 
   .section-sub { color:var(--dim); font-size:.78rem; margin:-4px 0 8px; }
+
+  .goldenuni {
+    position:fixed; z-index:15; left:-12vw;
+    font-size:2.8rem; cursor:pointer;
+    background:none; border:none; padding:8px;
+    filter: sepia(1) saturate(5) hue-rotate(-18deg) brightness(1.15) drop-shadow(0 0 14px rgba(255,200,60,1));
+    animation: flyAcross linear forwards, flutter 1.4s ease-in-out infinite;
+  }
+  .goldenuni:focus-visible { outline:3px dashed var(--aqua); outline-offset:2px; border-radius:12px; }
+  body.paused .goldenuni { animation-play-state: paused !important; }
 
   .butterfly {
     position:fixed; z-index:15; left:-12vw;
@@ -494,15 +528,22 @@
   }
   .beam-input:focus-visible { outline:3px dashed var(--aqua); }
 
-  .toast {
-    position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
-    z-index:30; background:var(--ink); color:#fff;
-    font-family:'Fredoka',sans-serif; font-weight:600; font-size:.9rem;
-    padding:10px 18px; border-radius:99px;
-    box-shadow:0 8px 24px rgba(74,53,96,.4);
-    animation: toastIn .3s ease;
+  .toast-stack {
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    display:flex; flex-direction:column;
+    pointer-events:none;
+    padding-bottom:env(safe-area-inset-bottom, 0);
   }
-  @keyframes toastIn { from { transform:translate(-50%, 20px); opacity:0; } }
+  .toastbar {
+    width:100%; background:rgba(74,53,96,.94); color:#fff;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:.88rem;
+    padding:9px 16px; text-align:center;
+    border-top:1px solid rgba(255,255,255,.15);
+    animation: toastIn .25s ease;
+    transition: opacity .4s ease;
+  }
+  .toastbar.fading { opacity:0; }
+  @keyframes toastIn { from { transform:translateY(100%); opacity:0; } }
 
   h2 {
     font-family:'Fredoka', sans-serif; font-weight:600; font-size:1.05rem;
@@ -561,7 +602,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v7.4</p>
+  <p class="version-tag">v7.9</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -642,6 +683,7 @@
       <button class="pill-btn wide" id="closetBtn">👒 Unicorn Closet</button>
       <button class="pill-btn wide" id="bankBtn">🏦 Sparkle Bank</button>
       <button class="pill-btn wide" id="petBtn">🐾 Adopt a Pet</button>
+      <button class="pill-btn wide" id="themeBtn">🎨 Themes</button>
       <button class="pill-btn wide" id="saveBtn">💾 Save</button>
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
       <button class="pill-btn wide" id="shareBtn">📤 Share &amp; Transfer</button>
@@ -717,6 +759,13 @@
     <div class="menu-list">
       <button class="pill-btn wide rainbow" id="surpriseOk">🌈 Let's go!</button>
     </div>
+  </div>
+</div>
+<div class="modal-back" id="themeModal" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>🎨 Themes</h3><button class="modal-close" id="themeClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Repaint the whole game! Buy with 💎, tap to switch anytime.</p>
+    <div class="sticker-grid" id="themeGrid"></div>
   </div>
 </div>
 <div class="modal-back" id="petModal" hidden>
@@ -843,7 +892,7 @@
   </div>
 </div>
 <input type="file" id="importFile" accept=".txt,.ucsave,.json" style="display:none">
-<div class="toast" id="toast" hidden></div>
+<div class="toast-stack" id="toastStack"></div>
 
 <script>
 (() => {
@@ -875,19 +924,31 @@
     { id:'pancakes',  icon:'🥞', name:'Blueberry Pancakes',  desc:'+280 sparkles/sec',       baseCost:26000,  sps:280,  owned:0, costScale:1.15 },
     { id:'smoothie',  icon:'🥤', name:'Fruit Smoothie',      desc:'+1,500 sparkles/sec',     baseCost:160000, sps:1500, owned:0, costScale:1.15 },
     { id:'waffles',   icon:'🧇', name:'Waffle Feast',        desc:'+9,000 sparkles/sec',     baseCost:1.1e6,  sps:9000, owned:0, costScale:1.15 },
+    { id:'goldpan',   icon:'🥞', name:'Golden Pancake Tower', desc:'+55K sparkles/sec',      baseCost:8e6,    sps:55e3,  owned:0, costScale:1.15 },
+    { id:'fondue',    icon:'🫕', name:'Rainbow Fondue',       desc:'+320K sparkles/sec',     baseCost:60e6,   sps:320e3, owned:0, costScale:1.15 },
+    { id:'starfruit', icon:'🌟', name:'Star Fruit Buffet',    desc:'+1.9M sparkles/sec',     baseCost:450e6,  sps:1.9e6, owned:0, costScale:1.15 },
+    { id:'galaxy',    icon:'🎂', name:'Galaxy Cake',          desc:'+12M sparkles/sec',      baseCost:3.5e9,  sps:12e6,  owned:0, costScale:1.15 },
+    { id:'cosmic',    icon:'🥗', name:'Cosmic Salad',         desc:'+75M sparkles/sec',      baseCost:28e9,   sps:75e6,  owned:0, costScale:1.15 },
+    { id:'melon2',    icon:'🍉', name:'Planet Melon',         desc:'+480M sparkles/sec',     baseCost:220e9,  sps:480e6, owned:0, costScale:1.15 },
+    { id:'falls',     icon:'🌈', name:'Smoothie Falls',       desc:'+3B sparkles/sec',       baseCost:1.8e12, sps:3e9,   owned:0, costScale:1.15 },
+    { id:'fruitmtn',  icon:'🏔️', name:'Fruit Mountain',       desc:'+20B sparkles/sec',      baseCost:15e12,  sps:20e9,  owned:0, costScale:1.15 },
+    { id:'cloudber',  icon:'☁️', name:'Cloudberry Cloud',     desc:'+130B sparkles/sec',     baseCost:120e12, sps:130e9, owned:0, costScale:1.15 },
+    { id:'starfeast', icon:'✨', name:'Starlight Feast',      desc:'+900B sparkles/sec',     baseCost:1e15,   sps:900e9, owned:0, costScale:1.15 },
   ];
 
   // ---------- Helpers ----------
   const $ = id => document.getElementById(id);
   function fmt(n) {
     if (n < 1000) return n % 1 === 0 ? n.toString() : n.toFixed(1);
-    const units = ['K','M','B','T','Qa'];
+    const units = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
     let u = -1;
     while (n >= 1000 && u < units.length - 1) { n /= 1000; u++; }
     return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + units[u];
   }
   const costOf = it => Math.ceil(it.baseCost * Math.pow(it.costScale, Math.max(0, it.owned - (it.priceResetAt || 0))));
-  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned, 0) * (chillMode ? chillMult : 1) * gemMult() * weatherMult();
+  const tierMult = it => it.owned >= 100 ? 8 : it.owned >= 50 ? 4 : it.owned >= 25 ? 2 : 1;
+  const tierStars = it => it.owned >= 100 ? '⭐⭐⭐' : it.owned >= 50 ? '⭐⭐' : it.owned >= 25 ? '⭐' : '';
+  const totalSps = () => ITEMS.reduce((s, it) => s + it.sps * it.owned * tierMult(it), 0) * (chillMode ? chillMult : 1) * gemMult() * weatherMult() * (goldenFrenzy() ? 7 : 1);
 
   // Chill Meter state (feature toggles on in the Dev Menu; off by default)
   let chillEnabled = false;
@@ -924,6 +985,11 @@
     it.owned++;
     if (it.clickMult) clickPower *= it.clickMult;
     foodsBought++;
+    if (it.sps > 0 && (it.owned === 25 || it.owned === 50 || it.owned === 100)) {
+      rainbowStorm(30);
+      sfx.fanfare();
+      toast(it.icon + ' ' + it.name + ' leveled up to ' + tierStars(it) + ' — output ×' + tierMult(it) + '!');
+    }
     burst(btn.getBoundingClientRect(), 6);
     sfx.buy();
     render();
@@ -943,7 +1009,7 @@
   // ---------- Clicking ----------
   const uni = $('unicorn');
   uni.addEventListener('click', e => {
-    const gain = clickPower * (chillMode ? chillMult : 1) * gemMult() * weatherMult();
+    const gain = clickPower * (chillMode ? chillMult : 1) * gemMult() * weatherMult() * (goldenFrenzy() ? 7 : 1);
     earn(gain);
     totalTaps++;
 
@@ -1017,7 +1083,7 @@
   // ---------- Render ----------
   function render() {
     $('sparkleCount').textContent = fmt(Math.floor(sparkles));
-    $('spsLabel').textContent = fmt(totalSps()) + ' sparkles/sec' + (chillMode ? '  😌×' + chillMult : '');
+    $('spsLabel').textContent = fmt(totalSps()) + ' sparkles/sec' + (chillMode ? '  😌×' + chillMult : '') + (goldenFrenzy() ? '  🌟×7' : '');
     $('clickPowerLabel').textContent = '+' + fmt(clickPower * (chillMode ? chillMult : 1) * gemMult()) + ' per tap';
     if (chillEnabled) {
       $('meterFill').style.width = meter + '%';
@@ -1026,7 +1092,7 @@
 
     ITEMS.forEach(it => {
       const b = btnRefs[it.id];
-      b.querySelector('.owned').textContent = it.owned ? '×' + it.owned : '';
+      b.querySelector('.owned').textContent = it.owned ? '×' + it.owned + (it.sps > 0 ? tierStars(it) : '') : '';
       if (sellMode) {
         b.querySelector('.cost').textContent = it.owned ? 'Sell +' + fmt(Math.floor(costOf({...it, owned: it.owned-1, priceResetAt: Math.min(it.priceResetAt||0, it.owned-1)}) * 0.5)) + ' ✨' : '—';
         b.disabled = it.owned < 1;
@@ -1108,26 +1174,26 @@
     { id:'meow',     icon:'🐱', name:'MEOW?!',             desc:'You found the royal secret…', secret:true, cond:() => meowUsed },
     { id:'cloudfan', icon:'🌩️', name:'Cloud Snack',        desc:'Feed the clouds 5 times in one sitting. Why?!', secret:true, cond:() => sessionCloudTouches >= 5 },
     { id:'gift',     icon:'🎀', name:'Gift Opener',        desc:'You opened the surprise!', secret:true, cond:() => giftOpened },
+    { id:'golden',   icon:'🌟', name:'Golden Encounter',   desc:'Catch a golden unicorn', cond:() => goldenCaught >= 1 },
+    { id:'starchef', icon:'⭐', name:'Star Chef',          desc:'Level a food up to ⭐ (own 25 of it)', cond:() => ITEMS.some(i => i.sps > 0 && i.owned >= 25) },
+    { id:'starchef3',icon:'🏆', name:'Master Chef',        desc:'Level a food up to ⭐⭐⭐ (own 100!)', cond:() => ITEMS.some(i => i.sps > 0 && i.owned >= 100) },
     { id:'petpal',   icon:'🐾', name:'Pet Parent',         desc:'Adopt your first pet', cond:() => petsOwned.length >= 1 },
     { id:'zoo15',    icon:'🎪', name:'Zoo Keeper',         desc:'Adopt 15 pets', cond:() => petsOwned.length >= 15 },
     { id:'allpets',  icon:'🏡', name:'Whole Zoo',          desc:'Adopt every single pet', cond:() => petsOwned.length >= PETS.length },
   ];
   const unlockedStickers = new Set();
 
-  const toastEl = $('toast');
-  const toastQueue = [];
-  let toastBusy = false;
+  const toastStack = $('toastStack');
+  const MAX_TOASTS = 5;
   function toast(msg) {
-    toastQueue.push(msg);
-    if (!toastBusy) nextToast();
-  }
-  function nextToast() {
-    const msg = toastQueue.shift();
-    if (!msg) { toastBusy = false; toastEl.hidden = true; return; }
-    toastBusy = true;
-    toastEl.hidden = false;
-    toastEl.textContent = msg;
-    setTimeout(nextToast, 2200);
+    // Newest appears at the very bottom; older ones sit one line up. No queueing.
+    const bar = document.createElement('div');
+    bar.className = 'toastbar';
+    bar.textContent = msg;
+    toastStack.appendChild(bar);
+    while (toastStack.children.length > MAX_TOASTS) toastStack.firstChild.remove();
+    setTimeout(() => bar.classList.add('fading'), 2600);
+    setTimeout(() => bar.remove(), 3100);
   }
 
   function checkStickers() {
@@ -1198,6 +1264,7 @@
       dec: DECOR.filter(d => d.owned).map(d => d.id),
       bf: butterfliesCaught,
       sk: snacksRescued,
+      gu: goldenCaught,
       snd: soundOn,
       msc: mischiefOn,
       kp: kittyPets,
@@ -1209,6 +1276,8 @@
       cl: closetOwned,
       wr: worn,
       pets: petsOwned,
+      thms: themesOwned,
+      thm: currentTheme,
       dg: lastDaily,
       bk: Math.floor(bankBalance),
       ts: Date.now(),
@@ -1237,6 +1306,7 @@
     DECOR.forEach(d => { d.owned = (state.dec || []).includes(d.id); });
     butterfliesCaught = state.bf || 0;
     snacksRescued = state.sk || 0;
+    goldenCaught = state.gu || 0;
     soundOn = state.snd !== undefined ? !!state.snd : true;
     $('soundBtn').textContent = '🔊 Sounds: ' + (soundOn ? 'ON' : 'OFF');
     kittyPets = state.kp || 0;
@@ -1248,6 +1318,9 @@
     worn = state.wr || null;
     petsOwned = Array.isArray(state.pets) ? state.pets : [];
     renderPets();
+    themesOwned = Array.isArray(state.thms) && state.thms.length ? state.thms : ['classic'];
+    currentTheme = state.thm && themesOwned.includes(state.thm) ? state.thm : 'classic';
+    applyTheme();
     lastDaily = state.dg || '';
     bankBalance = state.bk || 0;
     renderCloset();
@@ -1401,6 +1474,64 @@
     });
   }
 
+  // ---------- 🌟 Golden Unicorn (rare & random!) ----------
+  let goldenCaught = 0;
+  let goldenUntil = 0;   // frenzy end timestamp
+  const goldenFrenzy = () => performance.now() < goldenUntil;
+  function scheduleGolden() {
+    setTimeout(spawnGolden, 180000 + Math.random() * 180000);  // every 3–6 minutes
+  }
+  function spawnGolden() {
+    if (paused) { setTimeout(spawnGolden, 15000); return; }
+    const g = document.createElement('button');
+    g.className = 'goldenuni';
+    g.textContent = '🦄';
+    g.setAttribute('aria-label', 'A golden unicorn! Tap it!');
+    g.style.top = (12 + Math.random() * 50) + 'vh';
+    const flightSecs = 8;
+    g.style.animationDuration = flightSecs + 's, 1.4s';
+    let caught = false;
+    g.addEventListener('click', e => {
+      if (caught) return;
+      caught = true;
+      goldenCaught++;
+      goldenSurprise(e);
+      g.remove();
+    });
+    document.body.appendChild(g);
+    setTimeout(() => { if (!caught) g.remove(); }, flightSecs * 1000 + 500);
+    scheduleGolden();
+  }
+  function goldenSurprise(e) {
+    const roll = Math.random();
+    sparkleBurst(e.clientX, e.clientY);
+    sfx.fanfare();
+    if (roll < 0.40) {                      // 40% — jackpot
+      const jackpot = Math.max(5000, Math.floor(totalSps() * 600));
+      earn(jackpot);
+      floatNum('🌟 JACKPOT +' + fmt(jackpot) + ' ✨', e.clientX, e.clientY);
+      toast('🌟 The golden unicorn left a JACKPOT! +' + fmt(jackpot) + ' ✨');
+    } else if (roll < 0.65) {               // 25% — free food
+      const owned = ITEMS.filter(i => i.owned > 0 && i.sps > 0);
+      const pool = owned.length ? owned : ITEMS.filter(i => i.sps > 0).slice(0, 3);
+      const pick = pool[Math.random() * pool.length | 0];
+      pick.owned++;
+      toast('🌟 The golden unicorn conjured a free ' + pick.name + '! ' + pick.icon);
+    } else if (roll < 0.85) {               // 20% — frenzy
+      goldenUntil = performance.now() + 10000;
+      toast('🌟 GOLDEN FRENZY — everything ×7 for 10 seconds!');
+      rainbowStorm(30);
+    } else if (roll < 0.95) {               // 10% — a gem
+      gems++;
+      toast('🌟 The golden unicorn dropped a Rainbow Gem! 💎');
+    } else {                                // 5% — comedy
+      toast('🌟 The golden unicorn winked at you. That\'s it. That\'s the prize. ✨');
+    }
+    render();
+    storageSave();
+  }
+  scheduleGolden();
+
   // ---------- Golden Butterfly ----------
   let butterfliesCaught = 0;
   function scheduleButterfly() {
@@ -1515,6 +1646,7 @@
     quests = [];  // fresh goals for the fresh start
     closetOwned = []; worn = null; renderCloset();
     petsOwned = []; renderPets();
+    themesOwned = ['classic']; currentTheme = 'classic'; applyTheme();
     lastDaily = '';
     bankBalance = 0;
     endChill();
@@ -2137,6 +2269,57 @@
   $('closetBtn').addEventListener('click', () => { menuModal.hidden = true; renderCloset(); closetModal.hidden = false; });
   $('closetClose').addEventListener('click', () => closetModal.hidden = true);
   closetModal.addEventListener('click', e => { if (e.target === closetModal) closetModal.hidden = true; });
+
+  // ---------- 🎨 Room Themes ----------
+  const THEMES = [
+    { id:'classic',   icon:'🌅', name:'Classic',   cost:0 },
+    { id:'bubblegum', icon:'🌸', name:'Bubblegum', cost:25 },
+    { id:'ocean',     icon:'🌊', name:'Ocean',     cost:50 },
+    { id:'forest',    icon:'🌲', name:'Forest',    cost:75 },
+    { id:'space',     icon:'🌌', name:'Space',     cost:150 },
+  ];
+  let themesOwned = ['classic'];
+  let currentTheme = 'classic';
+
+  function applyTheme() {
+    THEMES.forEach(t => document.body.classList.remove('theme-' + t.id));
+    if (currentTheme !== 'classic') document.body.classList.add('theme-' + currentTheme);
+  }
+  const themeModal = $('themeModal');
+  const themeGrid = $('themeGrid');
+  const themeCells = {};
+  THEMES.forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'sticker closet-item';
+    d.addEventListener('click', () => themeTap(t));
+    themeGrid.appendChild(d);
+    themeCells[t.id] = d;
+  });
+  function themeTap(t) {
+    if (!themesOwned.includes(t.id)) {
+      if (gems < t.cost) { toast('Not enough gems — this theme needs 💎 ' + t.cost); return; }
+      gems -= t.cost;
+      themesOwned.push(t.id);
+      sfx.buy();
+      toast('🎨 New theme: ' + t.name + '!');
+    }
+    currentTheme = t.id;
+    applyTheme();
+    renderThemes(); render(); storageSave();
+  }
+  function renderThemes() {
+    THEMES.forEach(t => {
+      const cell = themeCells[t.id];
+      const owned = themesOwned.includes(t.id);
+      cell.classList.toggle('wearing', currentTheme === t.id);
+      cell.classList.toggle('cantafford', !owned && gems < t.cost);
+      cell.innerHTML = '<span class="s-icon">' + t.icon + '</span><span class="s-name">' + t.name + '</span>' +
+        '<span class="s-desc">' + (currentTheme === t.id ? 'Active!' : owned ? 'Tap to use' : '💎 ' + t.cost) + '</span>';
+    });
+  }
+  $('themeBtn').addEventListener('click', () => { menuModal.hidden = true; renderThemes(); themeModal.hidden = false; });
+  $('themeClose').addEventListener('click', () => themeModal.hidden = true);
+  themeModal.addEventListener('click', e => { if (e.target === themeModal) themeModal.hidden = true; });
 
   // ---------- 🐾 Pet Adoption ----------
   const PETS = [   // priced in sparkles ✨
