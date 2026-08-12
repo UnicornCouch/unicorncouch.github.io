@@ -615,7 +615,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v8.2</p>
+  <p class="version-tag">v8.3</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -2546,8 +2546,11 @@
   shareModal.addEventListener('click', e => { if (e.target === shareModal) shareModal.hidden = true; });
 
   // ---------- 🔗 Transfer links (works on ANY browser — no camera, no server) ----------
+  // Links always point at the real site — so a link made anywhere (even a
+  // downloaded copy or a preview) opens the deployed game and imports there.
+  const SITE_URL = 'https://unicorncouch.github.io/';
   function buildTransferLink() {
-    return location.origin + location.pathname + '#uc=' + makeSave();
+    return SITE_URL + '#uc=' + encodeURIComponent(makeSave());
   }
   $('linkBtn').addEventListener('click', () => {
     hideShare();
@@ -2573,7 +2576,10 @@
   let pendingLinkSave = null;
   function checkIncomingLink() {
     if (!location.hash.startsWith('#uc=')) return;
-    pendingLinkSave = location.hash.slice(4);
+    const raw = location.hash.slice(4);
+    try { pendingLinkSave = decodeURIComponent(raw); }   // new armored links
+    catch { pendingLinkSave = raw; }                      // old-style links still work
+
     // Clear the hash right away so a refresh doesn't re-prompt
     history.replaceState(null, '', location.pathname + location.search);
     document.querySelectorAll('.modal-back').forEach(m => m.hidden = true);
