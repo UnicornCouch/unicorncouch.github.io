@@ -615,7 +615,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v8.3</p>
+  <p class="version-tag">v8.5</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -666,6 +666,7 @@
   <h2>Quests</h2>
   <p class="section-sub">Little goals, little rewards — they refresh when done! 📜</p>
   <div class="quests" id="questList"></div>
+  <button class="pill-btn" id="questRefreshBtn" style="display:block;margin:2px auto 0;">🔄 New quests (3 left today)</button>
 
   <h2>Breakfast Table</h2>
   <div class="shop" id="shop"></div>
@@ -1291,6 +1292,8 @@
       pt: Math.floor(totalPlaySeconds),
       fb: foodsBought,
       q: quests,
+      qrd: questRefreshDay,
+      qrn: questRefreshesUsed,
       cl: closetOwned,
       wr: worn,
       pets: petsOwned,
@@ -2191,7 +2194,7 @@
   }
   function newQuest() {
     const activeTypes = quests.map(q => q.t);
-    const pool = QUEST_TYPES.filter(qt => !activeTypes.includes(qt.t));
+    const pool = QUEST_TYPES.filter(qt => !activeTypes.includes(qt.t) && (qt.t !== 'chill' || chillEnabled));
     const qt = pool[Math.random() * pool.length | 0];
     let target;
     if (qt.t === 'earn') target = Math.max(1000, Math.floor(totalSps() * 120 + clickPower * 200));
@@ -2203,6 +2206,10 @@
   const questListEl = $('questList');
   let questDomDirty = true;
   function renderQuests() {
+    if (!chillEnabled && quests.some(q => q.t === 'chill')) {
+      quests = quests.filter(q => q.t !== 'chill');
+      questDomDirty = true;
+    }
     ensureQuests();
     // complete finished quests
     for (let i = 0; i < quests.length; i++) {
@@ -2238,6 +2245,33 @@
     });
   }
   setInterval(() => { if (!paused) renderQuests(); }, 1000);
+
+  // Quest refresh — 3 per day
+  let questRefreshDay = '';
+  let questRefreshesUsed = 0;
+  function questRefreshesLeft() {
+    if (questRefreshDay !== todayStr()) return 3;
+    return Math.max(0, 3 - questRefreshesUsed);
+  }
+  function renderQuestRefresh() {
+    const left = questRefreshesLeft();
+    $('questRefreshBtn').textContent = '🔄 New quests (' + left + ' left today)';
+    $('questRefreshBtn').disabled = left === 0;
+  }
+  $('questRefreshBtn').addEventListener('click', () => {
+    if (questRefreshDay !== todayStr()) { questRefreshDay = todayStr(); questRefreshesUsed = 0; }
+    if (questRefreshesUsed >= 3) { toast('No refreshes left — more tomorrow!'); return; }
+    questRefreshesUsed++;
+    quests = [];
+    questDomDirty = true;
+    renderQuests();
+    renderQuestRefresh();
+    sfx.buy();
+    toast('🔄 Fresh quests!');
+    storageSave();
+  });
+  setInterval(renderQuestRefresh, 5000);
+  setTimeout(renderQuestRefresh, 0);   // deferred — runs after the whole script initializes
 
   // ---------- 📊 Statistics ----------
   const statsModal = $('statsModal');
@@ -2836,10 +2870,10 @@
 
   // ---------- 🌅 Daily Gift ----------
   let lastDaily = '';
-  const todayStr = () => {
+  function todayStr() {
     const d = new Date();
     return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
-  };
+  }
   const dailyModal = $('dailyModal');
   function maybeDailyGift() {
     if (lastDaily === todayStr()) return;
