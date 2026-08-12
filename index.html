@@ -88,6 +88,19 @@
   body.theme-space .gems { background:#3b2a63; border-color:#5a4590; color:#d9c8ff; }
   body.theme-space .clouds span { opacity:.3; }
 
+  /* ⚡ Low Graphics mode — drops the costly animations and filters */
+  body.lowgfx h1 { animation:none; }
+  body.lowgfx .clouds span { animation:none; }
+  body.lowgfx .clouds span:nth-child(n+4) { display:none; }
+  body.lowgfx .roampet { filter:none; }
+  body.lowgfx .roampet .pbody { animation:none; }
+  body.lowgfx .acc { animation:none; }
+  body.lowgfx #rd-fish, body.lowgfx #rd-lights, body.lowgfx #rd-tv,
+  body.lowgfx.time-night #rd-lamp { animation:none; }
+  body.lowgfx .rdec { filter:none; }
+  body.lowgfx .item, body.lowgfx .quest { box-shadow:none; }
+  body.lowgfx .sparkles { text-shadow:none; }
+
   .clouds { position:fixed; inset:0; pointer-events:none; z-index:2; overflow:hidden; }
   .clouds span {
     position:absolute; opacity:.7;
@@ -602,7 +615,7 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v7.9</p>
+  <p class="version-tag">v8.0</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
@@ -688,6 +701,7 @@
       <button class="pill-btn wide" id="loadBtn">📂 Load</button>
       <button class="pill-btn wide" id="shareBtn">📤 Share &amp; Transfer</button>
       <button class="pill-btn wide" id="soundBtn">🔊 Sounds: ON</button>
+      <button class="pill-btn wide" id="lowGfxBtn">⚡ Low Graphics: OFF</button>
       <button class="pill-btn wide" id="updateBtn">🔄 Check for updates</button>
       <button class="pill-btn wide" id="devBtn">🛠️ Dev Menu</button>
       <button class="pill-btn wide danger" id="resetBtn">🔄 Reset All</button>
@@ -973,7 +987,7 @@
       <span class="cost"></span>`;
     b.addEventListener('click', () => buy(it, b));
     shopEl.appendChild(b);
-    btnRefs[it.id] = b;
+    btnRefs[it.id] = { btn: b, costEl: b.querySelector('.cost'), ownedEl: b.querySelector('.owned') };
   });
 
   let sellMode = false;
@@ -1063,7 +1077,7 @@
     setTimeout(() => el.remove(), 900);
   }
   function sparkleBurst(x, y) {
-    const count = chillMode ? 15 : 3;
+    const count = lowGfx ? 1 : (chillMode ? 15 : 3);
     for (let i = 0; i < count; i++) {
       const el = document.createElement('div');
       el.className = 'confetti';
@@ -1081,33 +1095,36 @@
   }
 
   // ---------- Render ----------
+  const setText = (id, text) => { const el = $(id); if (el.textContent !== text) el.textContent = text; };
   function render() {
-    $('sparkleCount').textContent = fmt(Math.floor(sparkles));
-    $('spsLabel').textContent = fmt(totalSps()) + ' sparkles/sec' + (chillMode ? '  😌×' + chillMult : '') + (goldenFrenzy() ? '  🌟×7' : '');
-    $('clickPowerLabel').textContent = '+' + fmt(clickPower * (chillMode ? chillMult : 1) * gemMult()) + ' per tap';
+    setText('sparkleCount', fmt(Math.floor(sparkles)));
+    setText('spsLabel', fmt(totalSps()) + ' sparkles/sec' + (chillMode ? '  😌×' + chillMult : '') + (goldenFrenzy() ? '  🌟×7' : ''));
+    setText('clickPowerLabel', '+' + fmt(clickPower * (chillMode ? chillMult : 1) * gemMult() * (goldenFrenzy() ? 7 : 1)) + ' per tap');
     if (chillEnabled) {
       $('meterFill').style.width = meter + '%';
       $('meterPct').textContent = chillMode ? (chillClicksNeeded === 0 ? '♾️' : '😌') : Math.floor(meter) + '%';
     }
 
     ITEMS.forEach(it => {
-      const b = btnRefs[it.id];
-      b.querySelector('.owned').textContent = it.owned ? '×' + it.owned + (it.sps > 0 ? tierStars(it) : '') : '';
+      const { btn, costEl, ownedEl } = btnRefs[it.id];
+      const ownedText = it.owned ? '×' + it.owned + (it.sps > 0 ? tierStars(it) : '') : '';
+      if (ownedEl.textContent !== ownedText) ownedEl.textContent = ownedText;
+      let costText, can;
       if (sellMode) {
-        b.querySelector('.cost').textContent = it.owned ? 'Sell +' + fmt(Math.floor(costOf({...it, owned: it.owned-1, priceResetAt: Math.min(it.priceResetAt||0, it.owned-1)}) * 0.5)) + ' ✨' : '—';
-        b.disabled = it.owned < 1;
-        b.classList.toggle('affordable', it.owned >= 1);
+        costText = it.owned ? 'Sell +' + fmt(Math.floor(costOf({...it, owned: it.owned-1, priceResetAt: Math.min(it.priceResetAt||0, it.owned-1)}) * 0.5)) + ' ✨' : '—';
+        can = it.owned >= 1;
       } else {
-        const c = costOf(it);
-        b.querySelector('.cost').textContent = fmt(c) + ' ✨';
-        const can = sparkles >= c;
-        b.disabled = !can;
-        b.classList.toggle('affordable', can);
+        costText = fmt(costOf(it)) + ' ✨';
+        can = sparkles >= costOf(it);
       }
+      if (costEl.textContent !== costText) costEl.textContent = costText;
+      if (btn.disabled !== !can) btn.disabled = !can;
+      btn.classList.toggle('affordable', can);
     });
   }
 
   // ---------- Loops ----------
+  let loopTick = 0;
   setInterval(() => {
     if (paused) return;   // pause freezes production, meters, and checks
     sessionSeconds += 0.1;
@@ -1131,11 +1148,10 @@
       if (chillClicksNeeded === 0) startChill(); // 0 clicks needed = always chill
       else meter = Math.max(0, meter - 0.05); // meter slowly drains — keep tapping!
     }
-    checkStickers();
-    checkStage();
+    loopTick++;
     render();
-    renderDecor();
-    renderRebirth();
+    if (loopTick % 5 === 0) { renderDecor(); renderRebirth(); }
+    if (loopTick % 10 === 0) { checkStickers(); checkStage(); }
   }, 100);
 
   // ---------- Sticker Book ----------
@@ -1267,6 +1283,7 @@
       gu: goldenCaught,
       snd: soundOn,
       msc: mischiefOn,
+      lg: lowGfx,
       kp: kittyPets,
       cc: chillCount,
       mw: meowUsed,
@@ -1325,9 +1342,12 @@
     bankBalance = state.bk || 0;
     renderCloset();
     quests = Array.isArray(state.q) ? state.q.filter(q => q && QUEST_TYPES.some(x => x.t === q.t)) : [];
+    questDomDirty = true;
     mischiefOn = state.msc !== undefined ? !!state.msc : true;
     $('mischiefBtn').textContent = '😈 Mischief: ' + (mischiefOn ? 'ON' : 'OFF');
     $('mischiefBtn').classList.toggle('on', mischiefOn);
+    lowGfx = !!state.lg;
+    applyLowGfx();
     renderDecor();
     renderStickers();
     render();
@@ -1670,6 +1690,29 @@
   $('devBtn').addEventListener('click', () => { menuModal.hidden = true; devModal.hidden = false; });
   $('devClose').addEventListener('click', () => devModal.hidden = true);
   devModal.addEventListener('click', e => { if (e.target === devModal) devModal.hidden = true; });
+
+  // ⚡ Low Graphics mode (for slower tablets)
+  let lowGfx = false;
+  const PET_CAP_LOWGFX = 8;
+  function applyLowGfx() {
+    document.body.classList.toggle('lowgfx', lowGfx);
+    $('lowGfxBtn').textContent = '⚡ Low Graphics: ' + (lowGfx ? 'ON' : 'OFF');
+    $('lowGfxBtn').classList.toggle('on', lowGfx);
+    // Cap how many pets roam at once — the rest stay home (still owned!)
+    let shown = 0;
+    PETS.forEach(p => {
+      const el = petEls[p.id];
+      if (!el) return;
+      shown++;
+      el.style.display = (lowGfx && shown > PET_CAP_LOWGFX) ? 'none' : '';
+    });
+  }
+  $('lowGfxBtn').addEventListener('click', () => {
+    lowGfx = !lowGfx;
+    applyLowGfx();
+    toast(lowGfx ? '⚡ Low Graphics on — smoother on tablets! (8 pets roam at a time)' : '✨ Full graphics back on!');
+    storageSave();
+  });
 
   // Chill Meter toggle (default OFF)
   const chillBtn = $('chillBtn');
@@ -2151,6 +2194,7 @@
   function ensureQuests() { while (quests.length < 3) quests.push(newQuest()); }
 
   const questListEl = $('questList');
+  let questDomDirty = true;
   function renderQuests() {
     ensureQuests();
     // complete finished quests
@@ -2162,21 +2206,31 @@
         toast('📜 Quest complete! +' + fmt(q.reward) + ' ✨');
         sfx.sticker();
         quests[i] = null;
+        questDomDirty = true;
       }
     }
     quests = quests.filter(Boolean);
     ensureQuests();
-    questListEl.innerHTML = quests.map(q => {
+    if (questDomDirty) {
+      // full rebuild only when the quest set changes
+      questListEl.innerHTML = quests.map((q, i) => {
+        const qt = QUEST_TYPES.find(x => x.t === q.t);
+        return '<div class="quest"><div class="q-top"><span class="q-desc">' + qt.desc(q.target) +
+          '</span><span class="q-reward">+' + fmt(q.reward) + ' ✨</span></div>' +
+          '<div class="q-bar"><div class="q-fill" id="qf' + i + '"></div></div>' +
+          '<div class="q-prog" id="qp' + i + '"></div></div>';
+      }).join('');
+      questDomDirty = false;
+    }
+    quests.forEach((q, i) => {
       const qt = QUEST_TYPES.find(x => x.t === q.t);
       const prog = Math.min(q.target, Math.max(0, qt.metric() - q.base));
-      const pct = Math.min(100, prog / q.target * 100);
-      return '<div class="quest"><div class="q-top"><span class="q-desc">' + qt.desc(q.target) +
-        '</span><span class="q-reward">+' + fmt(q.reward) + ' ✨</span></div>' +
-        '<div class="q-bar"><div class="q-fill" style="width:' + pct + '%"></div></div>' +
-        '<div class="q-prog">' + fmt(Math.floor(prog)) + ' / ' + fmt(q.target) + '</div></div>';
-    }).join('');
+      const fill = $('qf' + i), pr = $('qp' + i);
+      if (fill) fill.style.width = Math.min(100, prog / q.target * 100) + '%';
+      if (pr) setText('qp' + i, fmt(Math.floor(prog)) + ' / ' + fmt(q.target));
+    });
   }
-  setInterval(() => { if (!paused) renderQuests(); }, 500);
+  setInterval(() => { if (!paused) renderQuests(); }, 1000);
 
   // ---------- 📊 Statistics ----------
   const statsModal = $('statsModal');
@@ -2424,6 +2478,7 @@
         delete petEls[p.id];
       }
     });
+    applyLowGfx();
   }
   // Wandering — continuous: a new stroll begins the moment the last one ends
   function roamPet(el) {
@@ -2445,6 +2500,7 @@
   setInterval(() => {
     if (paused) return;   // pets glide to a stop while paused, then resume
     Object.values(petEls).forEach(el => {
+      if (el.style.display === 'none') return;
       if (!el._movingUntil || performance.now() >= el._movingUntil) roamPet(el);
     });
   }, 250);
