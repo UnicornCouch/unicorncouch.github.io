@@ -541,6 +541,16 @@
   }
   .beam-input:focus-visible { outline:3px dashed var(--aqua); }
 
+  .profile-label {
+    text-align:center; font-family:'Fredoka',sans-serif; font-weight:600;
+    font-size:.8rem; color:var(--lav); margin:-2px 0 8px;
+  }
+  .profile-row { display:flex; gap:6px; }
+  .profile-row .pill-btn { flex:1; }
+  .profile-row .del-btn { flex:0 0 auto; width:44px; border-color:#ffc9c9; color:#d64545; }
+  .profile-row .del-btn.armed { background:#ffecec; border-color:#d64545; }
+  .name-input { font-size:1rem; letter-spacing:normal; text-transform:none; margin-top:6px; }
+
   .toast-stack {
     position:fixed; left:0; right:0; bottom:0; z-index:30;
     display:flex; flex-direction:column;
@@ -615,8 +625,9 @@
 <div class="clouds" id="clouds"></div>
 <div class="wrap">
   <h1>🦄 Unicorn Couch 🛋️</h1>
-  <p class="version-tag">v8.5</p>
+  <p class="version-tag">v8.6</p>
   <p class="tagline">Tap the unicorn. Enjoy the coziest Saturday ever.</p>
+  <p class="profile-label" id="profileLabel"></p>
 
   <div class="scoreboard"><span class="sparkles" id="sparkleCount">0</span><span>✨</span></div>
   <div class="sps" id="spsLabel">0 sparkles/sec</div>
@@ -692,6 +703,7 @@
   <div class="modal menu-modal">
     <div class="modal-head"><h3>☰ Menu</h3><button class="modal-close" id="menuClose" aria-label="Close">✕</button></div>
     <div class="menu-list">
+      <button class="pill-btn wide" id="profileBtn">👤 Profiles</button>
       <button class="pill-btn wide" id="stickerBtn">🎟️ Sticker Book</button>
       <button class="pill-btn wide" id="statsBtn">📊 Statistics</button>
       <button class="pill-btn wide" id="closetBtn">👒 Unicorn Closet</button>
@@ -782,6 +794,17 @@
     <div class="modal-head"><h3>🎨 Themes</h3><button class="modal-close" id="themeClose" aria-label="Close">✕</button></div>
     <p class="modal-sub">Repaint the whole game! Buy with 💎, tap to switch anytime.</p>
     <div class="sticker-grid" id="themeGrid"></div>
+  </div>
+</div>
+<div class="modal-back" id="profileModal" hidden>
+  <div class="modal menu-modal">
+    <div class="modal-head"><h3>👤 Profiles</h3><button class="modal-close" id="profileClose" aria-label="Close">✕</button></div>
+    <p class="modal-sub">Everyone gets their own game — sparkles, pets, stickers, all of it.</p>
+    <div class="menu-list" id="profileList"></div>
+    <div class="new-profile">
+      <input type="text" class="beam-input name-input" id="newProfileName" maxlength="14" placeholder="New player name">
+      <button class="pill-btn wide" id="newProfileBtn" style="margin-top:8px;">➕ Create profile</button>
+    </div>
   </div>
 </div>
 <div class="modal-back" id="petModal" hidden>
@@ -1594,13 +1617,35 @@
   // Works when the game runs as a normal web page (local file, GitHub Pages, etc).
   // In sandboxed previews where storage is blocked, it safely does nothing —
   // the Save/Load code buttons still work as a manual backup.
-  const SAVE_KEY = 'unicornCouchSave';
+  const SAVE_KEY = 'unicornCouchSave';   // legacy single-profile key (migrated on boot)
+  const META_KEY = 'ucProfiles';
+  let profiles = [{ id:'p1', name:'Player 1' }];
+  let currentProfile = 'p1';
+  const profileKey = () => 'unicornCouchSave:' + currentProfile;
+  function saveProfilesMeta() {
+    try { localStorage.setItem(META_KEY, JSON.stringify({ list: profiles, current: currentProfile })); } catch {}
+  }
+  function loadProfilesMeta() {
+    try {
+      const meta = JSON.parse(localStorage.getItem(META_KEY) || 'null');
+      if (meta && Array.isArray(meta.list) && meta.list.length) {
+        profiles = meta.list;
+        currentProfile = meta.list.some(p => p.id === meta.current) ? meta.current : meta.list[0].id;
+      } else {
+        // First run with profiles: migrate the legacy save into Player 1
+        const legacy = localStorage.getItem(SAVE_KEY);
+        if (legacy) { localStorage.setItem(profileKey(), legacy); localStorage.removeItem(SAVE_KEY); }
+        saveProfilesMeta();
+      }
+    } catch {}
+  }
+  loadProfilesMeta();
   function storageSave() {
-    try { localStorage.setItem(SAVE_KEY, makeSave()); return true; } catch { return false; }
+    try { localStorage.setItem(profileKey(), makeSave()); return true; } catch { return false; }
   }
   function storageLoad(isAutoload) {
     try {
-      const code = localStorage.getItem(SAVE_KEY);
+      const code = localStorage.getItem(profileKey());
       if (!code) return 'empty';
       const state = applySave(code);
       if (isAutoload) handleOfflineIncome(state);
@@ -1661,7 +1706,7 @@
     }
   });
 
-  function resetAll() {
+  function freshState() {
     sparkles = 0; totalEarned = 0; lifetimeEarned = 0; totalTaps = 0; clickPower = 1;
     gems = 0; rebirths = 0; rebirthBaseline = 0;
     giftOpened = false; giftGemsGiven = false;  // the present comes back on a full reset
@@ -1678,12 +1723,17 @@
     unlockedStickers.clear();
     DECOR.forEach(d => d.owned = false);
     butterfliesCaught = 0;
+    goldenCaught = 0; snacksRescued = 0;
     currentStage = -1;
-    try { localStorage.removeItem(SAVE_KEY); } catch {}
+    questDomDirty = true;
     renderStickers();
     renderDecor();
     checkStage();
     render();
+  }
+  function resetAll() {
+    freshState();
+    try { localStorage.removeItem(profileKey()); } catch {}
     menuModal.hidden = true;
     toast('Fresh start! 🌅');
     setTimeout(maybeShowGift, 1500);  // the surprise returns for the new game
@@ -2416,6 +2466,79 @@
   $('themeBtn').addEventListener('click', () => { menuModal.hidden = true; renderThemes(); themeModal.hidden = false; });
   $('themeClose').addEventListener('click', () => themeModal.hidden = true);
   themeModal.addEventListener('click', e => { if (e.target === themeModal) themeModal.hidden = true; });
+
+  // ---------- 👤 Profiles ----------
+  const profileModal = $('profileModal');
+  function currentProfileName() {
+    const p = profiles.find(p => p.id === currentProfile);
+    return p ? p.name : 'Player 1';
+  }
+  function renderProfileLabel() { setText('profileLabel', '👤 ' + currentProfileName()); }
+  let armedDelete = null;
+  function renderProfiles() {
+    const list = $('profileList');
+    list.innerHTML = '';
+    profiles.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'profile-row';
+      const b = document.createElement('button');
+      b.className = 'pill-btn wide' + (p.id === currentProfile ? ' on' : '');
+      b.textContent = (p.id === currentProfile ? '✓ ' : '') + p.name;
+      b.addEventListener('click', () => switchProfile(p.id));
+      row.appendChild(b);
+      if (p.id !== currentProfile) {
+        const d = document.createElement('button');
+        d.className = 'pill-btn del-btn' + (armedDelete === p.id ? ' armed' : '');
+        d.textContent = armedDelete === p.id ? '⚠️' : '🗑️';
+        d.setAttribute('aria-label', 'Delete ' + p.name);
+        d.addEventListener('click', () => deleteProfile(p.id));
+        row.appendChild(d);
+      }
+      list.appendChild(row);
+    });
+  }
+  function switchProfile(id) {
+    if (id === currentProfile) { profileModal.hidden = true; return; }
+    storageSave();                       // tuck the current player's game away safely
+    currentProfile = id;
+    saveProfilesMeta();
+    let code = null;
+    try { code = localStorage.getItem(profileKey()); } catch {}
+    if (code) {
+      try { applySave(code); } catch { freshState(); }
+    } else {
+      freshState();                      // brand-new player starts brand-new
+      storageSave();
+      setTimeout(maybeShowGift, 1000);   // they get their own surprise!
+    }
+    renderProfileLabel();
+    renderProfiles();
+    profileModal.hidden = true;
+    toast('👤 Welcome, ' + currentProfileName() + '!');
+  }
+  function deleteProfile(id) {
+    if (armedDelete !== id) { armedDelete = id; renderProfiles(); setTimeout(() => { if (armedDelete === id) { armedDelete = null; renderProfiles(); } }, 4000); return; }
+    armedDelete = null;
+    profiles = profiles.filter(p => p.id !== id);
+    try { localStorage.removeItem('unicornCouchSave:' + id); } catch {}
+    saveProfilesMeta();
+    renderProfiles();
+    toast('Profile deleted.');
+  }
+  $('newProfileBtn').addEventListener('click', () => {
+    const name = $('newProfileName').value.trim();
+    if (!name) { toast('Give the new player a name first!'); return; }
+    if (profiles.length >= 8) { toast('That is a lot of players! (8 max)'); return; }
+    const id = 'p' + Date.now().toString(36);
+    profiles.push({ id, name });
+    $('newProfileName').value = '';
+    saveProfilesMeta();
+    switchProfile(id);
+  });
+  $('profileBtn').addEventListener('click', () => { menuModal.hidden = true; armedDelete = null; renderProfiles(); profileModal.hidden = false; });
+  $('profileClose').addEventListener('click', () => profileModal.hidden = true);
+  profileModal.addEventListener('click', e => { if (e.target === profileModal) profileModal.hidden = true; });
+  setTimeout(renderProfileLabel, 0);
 
   // ---------- 🐾 Pet Adoption ----------
   const PETS = [   // priced in sparkles ✨
